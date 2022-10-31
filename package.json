@@ -1,0 +1,17 @@
+{
+  "name": "achilles",
+  "version": "1.0.0",
+  "description": "",
+  "main": "penplot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "canvas-sketch": "^0.7.6",
+    "canvas-sketch-util": "^1.10.0",
+    "svg-parser": "^2.0.4"
+  }
+}

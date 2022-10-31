@@ -1,0 +1,29 @@
+<html>
+
+<head>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+    <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/three.js/0.146.0/three.min.js"></script>
+    <!-- this gives you window.PathConverter to work with after loading: -->
+<script src="js-svg-path/library.js"></script>
+
+    <script src="plotView.js"></script>
+
+    <script src="main.js"></script>
+
+    <style>
+        body {
+            background-color: black;
+            color: white
+        }
+
+    </style>
+
+</head>
+
+<body onload="init()" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+
+    <div id="plotViewContainer"></div>
+    <div id="svgContainer"></div>
+</body>
+
+</html>
