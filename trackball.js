@@ -1,62 +1,69 @@
 
+THREE.InteractiveControls = function (camera, domElement) {
 
-THREE.TrackballControls = function (camera, domElement) {
-
-	this.screen = { left: 0, top: 0, width: 0, height: 0 };
+    this.screen = { left: 0, top: 0, width: 0, height: 0 };
 
     var _this = this;
-	this.domElement = ( domElement !== undefined ) ? domElement : document;
+    this.domElement = (domElement !== undefined) ? domElement : document;
     this.camera = camera
 
     this.a3Width = 297
     this.a3Height = 420
     var box = this.domElement.getBoundingClientRect();
-    this.aspect =  box.height/box.width
+    this.aspect = box.height / box.width
 
-    this.position = {x:this.a3Width / 2, y: this.a3Height/2};
-    this.zoom = 1000
+    this.position = { x: this.a3Width / 2, y: this.a3Height / 2 };
+    this.zoom = 500
     this.mouseDown = false;
+    this.dragging = false;
+    var _selectedObject = null
 
+    var _raycaster = new THREE.Raycaster();
+    var _intersectObjects = []
 
-    this.updateCamera = function() {
-        camera.left = this.position.x - this.zoom/2
-        camera.right = this.position.x + this.zoom/2
-        camera.top = this.position.y - this.zoom/2 * this.aspect
-        camera.bottom = this.position.y + this.zoom/2 * this.aspect
-        camera.position.set(0,0,100)
-    
+    this.registerObject = function (obj) {
+        obj.geometry.computeBoundingBox()
+        _intersectObjects.push(obj)
+    }
+
+    this.updateCamera = function () {
+        camera.left = this.position.x - this.zoom / 2
+        camera.right = this.position.x + this.zoom / 2
+        camera.top = this.position.y - this.zoom / 2 * this.aspect
+        camera.bottom = this.position.y + this.zoom / 2 * this.aspect
+        camera.position.set(0, 0, 100)
+
         camera.updateProjectionMatrix()
     }
 
 
-    
-	_panStart = new THREE.Vector2(),
-	_panEnd = new THREE.Vector2();
+    _panStart = new THREE.Vector2(),
+        _panEnd = new THREE.Vector2();
 
     this.updateCamera();
     // methods
-	this.handleResize = function () {
+    this.handleResize = function () {
 
-		if ( this.domElement === document ) {
+        if (this.domElement === document) {
 
-			this.screen.left = 0;
-			this.screen.top = 0;
-			this.screen.width = window.innerWidth;
-			this.screen.height = window.innerHeight;
+            this.screen.left = 0;
+            this.screen.top = 0;
+            this.screen.width = window.innerWidth;
+            this.screen.height = window.innerHeight;
 
-		} else {
+        } else {
 
-			var box = this.domElement.getBoundingClientRect();
-			// adjustments come from similar code in the jquery offset() function
-			var d = this.domElement.ownerDocument.documentElement;
-			this.screen.left = box.left + window.pageXOffset - d.clientLeft;
-			this.screen.top = box.top + window.pageYOffset - d.clientTop;
-			this.screen.width = box.width;
-			this.screen.height = box.height;
+            var box = this.domElement.getBoundingClientRect();
+            // adjustments come from similar code in the jquery offset() function
+            var d = this.domElement.ownerDocument.documentElement;
+            this.screen.left = box.left + window.pageXOffset - d.clientLeft;
+            this.screen.top = box.top + window.pageYOffset - d.clientTop;
+            this.screen.width = box.width;
+            this.screen.height = box.height;
 
-		}
+        }
 
-	};
+    };
 
     this.handleResize();
 
@@ -82,7 +89,6 @@ THREE.TrackballControls = function (camera, domElement) {
 
         var mouseChange = new THREE.Vector2()
 
-
         return function () {
 
             mouseChange.copy(_panEnd).sub(_panStart);
@@ -98,10 +104,37 @@ THREE.TrackballControls = function (camera, domElement) {
 
     }());
 
+    this.dragObject = (function () {
+
+
+        var mouseChange = new THREE.Vector2()
+
+        return function () {
+
+            mouseChange.copy(_panEnd).sub(_panStart);
+
+            if (mouseChange.lengthSq() && _selectedObject != null) {
+
+                // this.position.x -= mouseChange.x * this.zoom
+                // this.position.y -= mouseChange.y * this.zoom
+
+                _selectedObject.position.set(
+                    _selectedObject.position.x + mouseChange.x * this.zoom,
+                    _selectedObject.position.y + mouseChange.y * this.zoom,
+                    0);
+            }
+        }
+
+    }());
 
     this.update = function () {
-        if (this.mouseDown) {
-            this.panCamera ()
+        if (this.canvasMove) {
+            this.panCamera()
+            _panStart.copy(_panEnd)
+        }
+
+        if (this.dragging) {
+            this.dragObject()
             _panStart.copy(_panEnd)
         }
 
@@ -129,23 +162,38 @@ THREE.TrackballControls = function (camera, domElement) {
 
         event.preventDefault();
         event.stopPropagation();
-        _this.mouseDown = true;
-
         _panStart.copy(getMouseOnScreen(event.pageX, event.pageY));
         _panEnd.copy(_panStart)
 
+        var _mouse = new THREE.Vector2()
+        var rect = domElement.getBoundingClientRect();
+
+        _mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        _mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        var intersects = []
+        _raycaster.setFromCamera(_mouse, camera);
+        if (_intersectObjects.length > 0) {
+             intersects = _raycaster.intersectObjects(_intersectObjects);
+        }
+        
+        if (intersects.length > 0) {
+            _this.dragging = true;
+            _selectedObject = intersects[0].object
+            domElement.style.cursor = 'move';
+
+        } else {
+            _this.canvasMove = true;
+
+        }
         document.addEventListener('mousemove', mousemove, false);
         document.addEventListener('mouseup', mouseup, false);
-
     }
 
     function mousemove(event) {
-
-
+        _panEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
         event.preventDefault();
         event.stopPropagation();
-
-        _panEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
 
     }
 
@@ -154,7 +202,10 @@ THREE.TrackballControls = function (camera, domElement) {
         event.preventDefault();
         event.stopPropagation();
 
-        _this.mouseDown = false;
+        _this.canvasMove = false;
+        _this.dragging = false;
+        domElement.style.cursor = 'default';
+        _selectedObject = null;
 
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
@@ -181,6 +232,8 @@ THREE.TrackballControls = function (camera, domElement) {
         console.log(delta)
 
         _this.zoom -= delta * 10
+        _this.zoom = Math.min(_this.zoom, 10000)
+        _this.zoom = Math.max(_this.zoom, 50)
         _this.updateCamera()
 
     }
@@ -199,5 +252,3 @@ THREE.TrackballControls = function (camera, domElement) {
     this.update();
 
 };
-
-THREE.TrackballControls.prototype = Object.create(THREE.EventDispatcher.prototype);
