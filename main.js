@@ -16,6 +16,8 @@ function init() {
         connect: function () { ApiRequest("connect") },
         plot: function () { ApiRequest("plot") },
         disconnect: function () { ApiRequest("disconnect") },
+        scale:1,
+        bakeScale: function () { bakeScale() },
     };
 
     var gui = new dat.GUI(guiParams);
@@ -23,6 +25,8 @@ function init() {
     gui.add(guiParams, 'connect')
     gui.add(guiParams, 'plot')
     gui.add(guiParams, 'disconnect')
+    gui.add(guiParams, 'scale', 0.001, 10).onChange(val => scalePlot(val))
+    gui.add(guiParams, 'bakeScale')
 
     setupScene()
 
