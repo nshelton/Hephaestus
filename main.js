@@ -24,6 +24,8 @@ function init() {
     gui.add(guiParams, 'plot')
     gui.add(guiParams, 'disconnect')
 
+    setupScene()
+
 }
 function removeAllChildNodes(parent) {
     while (parent.firstChild) {
