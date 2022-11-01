@@ -1,8 +1,8 @@
 
 // import { parse } from 'svg-parser';
 
-function ApiRequest(command) {
-    fetch('http://127.0.0.1:5000/' + command, { method: 'POST' })
+function ApiRequest(command, params = {}) {
+    fetch('http://127.0.0.1:5000/' + command, { method: 'POST', body: JSON.stringify( params )  })
         .then(function (response) {
             return response.json();
         })
@@ -14,7 +14,7 @@ function ApiRequest(command) {
 function init() {
     var guiParams = {
         connect: function () { ApiRequest("connect") },
-        plot: function () { ApiRequest("plot") },
+        plot: function () { createPlotList() },
         disconnect: function () { ApiRequest("disconnect") },
         scale:1,
         bakeScale: function () { bakeScale() },
@@ -31,11 +31,13 @@ function init() {
     setupScene()
 
 }
+
 function removeAllChildNodes(parent) {
     while (parent.firstChild) {
         parent.removeChild(parent.firstChild);
     }
 }
+
 function dropHandler(ev) {
     console.log('File(s) dropped');
     ev.preventDefault();
