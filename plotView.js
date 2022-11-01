@@ -94,7 +94,7 @@ function parseNodes(paths, scene) {
 }
 
 function plotControl(command, params) {
-    fetch('http://127.0.0.1:5000/' + command, { method: 'POST', body: params })
+    fetch('http://127.0.0.1:5000/' + command, { method: 'POST', body: JSON.stringify(params) })
         .then(function (response) {
             return response.json();
         })
@@ -110,12 +110,10 @@ function delay(time) {
 async function sendCommands(cmdList) {
     console.log(cmdList)
 
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < cmdList.length; i++) {
         cmd = cmdList[i]
         await delay(1000);
         plotControl(cmd[0], cmd[1] + "," + cmd[2])
-
-
     }
 }
 
@@ -135,8 +133,8 @@ function createPlotList() {
         const y = line.geometry.attributes.position.array[1]
         var debugBox = new THREE.Mesh(bbgeometry, bbmaterial);
         debugBox.position.set(Math.round(x * 100) / 100, Math.round(y * 100) / 100, 0)
-
-        commands.push(["move", x, y])
+        coords = []
+        coords.push([x, y])
 
         scene.add(debugBox)
         for (var i = 3; i < line.geometry.attributes.position.count; i += 3) {
@@ -145,8 +143,11 @@ function createPlotList() {
             var debugBox = new THREE.Mesh(bbgeometry, bbmaterial);
             debugBox.position.set(Math.round(x * 100) / 100, Math.round(y * 100) / 100, 0)
             scene.add(debugBox)
-            commands.push(["line", x, y])
+            coords.push([x, y])
         }
+
+        commands.push(["path", coords])
+
     })
     sendCommands(commands)
 }

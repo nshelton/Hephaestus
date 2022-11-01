@@ -2,7 +2,7 @@
 // import { parse } from 'svg-parser';
 
 function ApiRequest(command, params = {}) {
-    fetch('http://127.0.0.1:5000/' + command, { method: 'POST', body: JSON.stringify( params )  })
+    fetch('http://127.0.0.1:5000/' + command, { method: 'POST', body: JSON.stringify(params) })
         .then(function (response) {
             return response.json();
         })
@@ -11,17 +11,23 @@ function ApiRequest(command, params = {}) {
         });
 }
 
+
+plotter = new Axidraw()
+
+
 function init() {
     var guiParams = {
+        serial: function () { plotter.connect() },
         connect: function () { ApiRequest("connect") },
         plot: function () { createPlotList() },
         disconnect: function () { ApiRequest("disconnect") },
-        scale:1,
+        scale: 1,
         bakeScale: function () { bakeScale() },
     };
 
     var gui = new dat.GUI(guiParams);
 
+    gui.add(guiParams, 'serial')
     gui.add(guiParams, 'connect')
     gui.add(guiParams, 'plot')
     gui.add(guiParams, 'disconnect')
