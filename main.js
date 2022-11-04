@@ -15,20 +15,49 @@ function ApiRequest(command, params = {}) {
 plotter = new Axidraw()
 
 
+async function testPlot() {
+
+    var rad = 300
+
+    var points = []
+    for (var i = 0; i < 100; i++) {
+        var theta = i / 100 * Math.PI * 2
+        points.push([rad * Math.cos(theta), rad * Math.sin(theta)])
+    }
+
+    var last = points[0]
+
+    for (var i = 1; i < 100; i++) {
+        dx = points[i][0] - last[0]
+        dy = points[i][1] - last[1]
+
+        console.log(dx, dy)
+        plotter.move(100, 100)
+
+        last = points[i]
+
+    }
+
+}
+async function move() {
+
+    plotter.move(100, 100)
+
+}
 function init() {
     var guiParams = {
-        serial: function () { plotter.connect() },
-        connect: function () { ApiRequest("connect") },
-        plot: function () { createPlotList() },
-        disconnect: function () { ApiRequest("disconnect") },
+        connect: function () { plotter.connect() },
+        move: function () { move() },
+        plot: function () { testPlot() },
+        disconnect: function () { plotter.close() },
         scale: 1,
         bakeScale: function () { bakeScale() },
     };
 
     var gui = new dat.GUI(guiParams);
 
-    gui.add(guiParams, 'serial')
     gui.add(guiParams, 'connect')
+    gui.add(guiParams, 'move')
     gui.add(guiParams, 'plot')
     gui.add(guiParams, 'disconnect')
     gui.add(guiParams, 'scale', 0.001, 10).onChange(val => scalePlot(val))
