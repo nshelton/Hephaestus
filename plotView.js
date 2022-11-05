@@ -192,7 +192,7 @@ function setupScene() {
 
 
     const linematerial = new THREE.LineBasicMaterial({
-        color: 0x0000ff
+        color: 0xe61d5f
     });
 
     const points = [];
