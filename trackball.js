@@ -174,9 +174,10 @@ THREE.InteractiveControls = function (camera, domElement) {
         var intersects = []
         _raycaster.setFromCamera(_mouse, camera);
         if (_intersectObjects.length > 0) {
-             intersects = _raycaster.intersectObjects(_intersectObjects);
+            intersects = _raycaster.intersectObjects(_intersectObjects);
+            console.log(intersects)
         }
-        
+
         if (intersects.length > 0) {
             _this.dragging = true;
             _selectedObject = intersects[0].object
@@ -231,8 +232,8 @@ THREE.InteractiveControls = function (camera, domElement) {
 
         console.log(delta)
 
-        _this.zoom -= delta * 10
-        _this.zoom = Math.min(_this.zoom, 10000)
+        _this.zoom *= (1 - 0.05 * delta) 
+        _this.zoom = Math.min(_this.zoom, 1000000)
         _this.zoom = Math.max(_this.zoom, 50)
         _this.updateCamera()
 
