@@ -1,3 +1,5 @@
+const { math } = require("canvas-sketch-util")
+
 PathUtils = function () {
 
     this.circlePath = function (cx, cy, radius, segments = 100) {
@@ -25,7 +27,7 @@ PathUtils = function () {
 
 
     this.dragonPath = function () {
-        var n = 7
+        var n = 13
         var c = c1 = c2 = c2x = c2y = x = y = 0, d = 1, n = 1 << n;
         x = y = 0
         var scale = 200
@@ -45,4 +47,31 @@ PathUtils = function () {
     }
 
 
+    this.gridTest = function() {
+        noiseScale = 1500
+        noiseFreq = 0.0002
+
+        function fbm(x, y) {
+            return noise.simplex2(x*noiseFreq, y*noiseFreq) * noiseScale;
+        }
+
+  
+        paths = []
+        for(var x = 0; x < 100; x ++) {
+            path = []
+            for(var y = 0; y < 100; y ++) {
+                var px = x * 100
+                var py = y * 100
+                var value = fbm(px,py) * sin(y/100 * math.PI)
+                path.push([px + value, py])
+            }
+            paths.push(path)
+        }
+
+
+        return(paths)
+    }
+
+
 }
+
