@@ -169,6 +169,26 @@ PlotViewer = function () {
         this.lastbboxpos.copy(this.boundingBox.position)
     }
 
+
+    this.AddPaths = function (paths) {
+        this.container = new THREE.Object3D()
+        const material = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: false });
+
+        paths.forEach(path => {
+            const points = path.map(s => new THREE.Vector3(s[0] / 100, s[1] / 100, 0))
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, material);
+    
+    
+            this.lineObjects.push(line)
+            this.container.add(line);
+            this.segments.push(points)
+        })
+    
+        this.scene.add(this.container)
+        this.addDragNDrop(this.container)
+    }
+
     this.AddPath = function (path) {
         this.container = new THREE.Object3D()
         const material = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: false });

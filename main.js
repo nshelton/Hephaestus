@@ -109,6 +109,7 @@ function init() {
         pause: function () { pause() },
         resume: function () { resume() },
 
+        grid: function () {   viewer.AddPaths( pathUtils.gridTest()) },
         dragon: function () { viewer.AddPath(pathUtils.dragonPath()) },
         circle: function () { viewer.AddPath(pathUtils.circlePath(100,100,1000)) },
         speed: 4,
@@ -140,6 +141,7 @@ function init() {
     gui.add(guiParams, 'upPosition', 0, 33250).onChange((val) => { plotter.setPenUp(Math.round(val)); saveSettings("upPosition", val) })
     gui.add(guiParams, 'penDown')
     gui.add(guiParams, 'downPosition', 0, 33250).onChange((val) => { plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val) })
+    gui.add(guiParams, 'grid')
     gui.add(guiParams, 'dragon')
     gui.add(guiParams, 'circle')
     gui.add(guiParams, 'plot')

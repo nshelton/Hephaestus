@@ -12,6 +12,7 @@
   "dependencies": {
     "canvas-sketch": "^0.7.6",
     "canvas-sketch-util": "^1.10.0",
+    "simplex-noise": "^4.0.1",
     "svg-parser": "^2.0.4",
     "three": "^0.146.0"
   }
