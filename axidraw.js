@@ -35,8 +35,8 @@ Axidraw = function () {
         this.connected = true
     }
 
-    this.penUp = async function (duration=500) { await this.writeCommand(`SP,1,${duration}`) }
-    this.penDown = async function (duration=500) { await this.writeCommand(`SP,0,${duration}`) }
+    this.penUp = async function (duration=10) {  this.writeCommand(`SP,1,${duration}`), this.writeCommand("XM,100,0,0") }
+    this.penDown = async function (duration=10) {  this.writeCommand(`SP,0,${duration}`), this.writeCommand("XM,100,0,0") }
     this.move = async function (x, y) { await this.writeCommand(`XM,${Math.floor(Math.sqrt(x * x + y * y) / this.speed)},${x},${y}`) }
     this.disableMotor = async function () { await this.writeCommand("EM,0,0") }
     this.enableMotor = async function () { await this.writeCommand(`EM,${this.stepmode},1`) }
@@ -45,6 +45,7 @@ Axidraw = function () {
     this.setPenUp = async function (val) { await this.writeCommand(`SC,4,${val}`) }
     this.setPenDown = async function (val) { await this.writeCommand(`SC,5,${val}`) }
 
+ 
 
     this.commandsSent = 0
     this.commandsCompleted = 0

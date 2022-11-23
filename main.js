@@ -8,9 +8,7 @@ var queue = []
 plotterPos = [0, 0]
 paused = false
 
-
 function moveTo(p) {
-    console.log(p, plotterPos)
     dx = Math.round(p[0] - plotterPos[0])
     dy = Math.round(p[1] - plotterPos[1])
     queue.push(["move", dx, dy])
@@ -41,11 +39,38 @@ async function testPlot() {
         }
     }
     queue.push(["move", dx, dy])
-
 }
 
 function pause() { paused = true }
 function resume() { paused = false }
+
+window.addEventListener("keydown", (event) => {
+    
+    if (event.isComposing || event.key === "229") {
+        return;
+    }
+
+    if (event.key == "b") {
+        var count = 0
+        while (true) {
+            var next = queue.shift()
+            if (next)
+                switch (next[0]) {
+                    case "move": plotter.move(next[1], next[2]); break;
+                    case "up": plotter.penUp(); break;
+                    case "down": plotter.penDown(); break;
+                }
+            count++
+
+            if (count > 1000 || next[0] == "up") {
+                break;
+            }
+        }
+
+    }
+    // do something
+});
+
 
 async function consumeQueue() {
     if (!paused) {
@@ -61,7 +86,6 @@ async function consumeQueue() {
                         case "down": plotter.penDown(); break;
                     }
             }
-
         }
     }
 
@@ -109,9 +133,11 @@ function init() {
         pause: function () { pause() },
         resume: function () { resume() },
 
-        grid: function () {   viewer.AddPaths( pathUtils.gridTest()) },
+        grid: function () { viewer.AddPaths(pathUtils.gridTest()) },
+        circleGrid: function () { viewer.AddPaths(pathUtils.circleGrid()) },
         dragon: function () { viewer.AddPath(pathUtils.dragonPath()) },
-        circle: function () { viewer.AddPath(pathUtils.circlePath(100,100,1000)) },
+        circle: function () { viewer.AddPath(pathUtils.circlePath(100, 100, 1000)) },
+        flowField: function () { viewer.AddPaths(pathUtils.flowField()) },
         speed: 4,
         penUp: function () { plotter.penUp() },
         upPosition: 24017,
@@ -143,6 +169,8 @@ function init() {
     gui.add(guiParams, 'downPosition', 0, 33250).onChange((val) => { plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val) })
     gui.add(guiParams, 'grid')
     gui.add(guiParams, 'dragon')
+    gui.add(guiParams, 'flowField')
+    gui.add(guiParams, 'circleGrid')
     gui.add(guiParams, 'circle')
     gui.add(guiParams, 'plot')
     gui.add(guiParams, 'createPlot')
@@ -150,5 +178,6 @@ function init() {
 
     viewer.setupScene()
     consumeQueue()
+
 
 }

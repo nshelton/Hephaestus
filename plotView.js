@@ -82,9 +82,9 @@ PlotViewer = function () {
 
         this.lineObjects.forEach(line => {
             var posBuffer = line.geometry.attributes.position.clone()
-            console.log(this.boundingBox.matrix)
+            // console.log(this.boundingBox.matrix)
             posBuffer.applyMatrix4(this.boundingBox.matrix)
-            console.log(posBuffer)
+            // console.log(posBuffer)
 
             coords = []
 
