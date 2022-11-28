@@ -79,12 +79,13 @@ async function consumeQueue() {
         if (queue.length > 0) {
             for (var i = 0; i < 10; i++) {
                 var next = queue.shift()
-                if (next)
+                if (next) {
                     switch (next[0]) {
                         case "move": plotter.move(next[1], next[2]); break;
                         case "up": plotter.penUp(); break;
                         case "down": plotter.penDown(); break;
                     }
+                }
             }
         }
     }
@@ -134,9 +135,10 @@ function init() {
         resume: function () { resume() },
 
         grid: function () { viewer.AddPaths(pathUtils.gridTest()) },
+        rect: function () { viewer.AddPath(pathUtils.rectPath(100,100,1000,1000)) },
         circleGrid: function () { viewer.AddPaths(pathUtils.circleGrid()) },
         dragon: function () { viewer.AddPath(pathUtils.dragonPath()) },
-        circle: function () { viewer.AddPath(pathUtils.circlePath(100, 100, 1000)) },
+        circle: function () { viewer.AddPath(pathUtils.circlePath(1000, 1000, 4000)) },
         flowField: function () { viewer.AddPaths(pathUtils.flowField()) },
         speed: 4,
         penUp: function () { plotter.penUp() },
@@ -167,6 +169,7 @@ function init() {
     gui.add(guiParams, 'upPosition', 0, 33250).onChange((val) => { plotter.setPenUp(Math.round(val)); saveSettings("upPosition", val) })
     gui.add(guiParams, 'penDown')
     gui.add(guiParams, 'downPosition', 0, 33250).onChange((val) => { plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val) })
+    gui.add(guiParams, 'rect')
     gui.add(guiParams, 'grid')
     gui.add(guiParams, 'dragon')
     gui.add(guiParams, 'flowField')

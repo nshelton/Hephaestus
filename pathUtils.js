@@ -45,64 +45,6 @@ PathUtils = function () {
         return (path)
     }
 
-
-    this.gridTest = function () {
-        let N = 100
-        noise.seed(Math.random());
-        noiseScale = N / 13
-        noiseFreq = 0.03
-
-        function fbm(x, y) {
-            var val = 0
-            val += noise.simplex2(x * noiseFreq, y * noiseFreq) * noiseScale;
-            val += noise.simplex2(x * noiseFreq * 2, y * noiseFreq * 2) * noiseScale / 2;
-            val += noise.simplex2(x * noiseFreq * 4, y * noiseFreq * 4) * noiseScale / 4;
-            val += noise.simplex2(x * noiseFreq * 8, y * noiseFreq * 8) * noiseScale / 8;
-
-            return val;
-        }
-
-
-        paths = []
-        for (var x = 0; x <= N; x++) {
-            path = []
-            for (var y = 0; y <= N; y++) {
-
-                var px = x
-                var py = y
-                if (x % 2 == 0)
-                    py = (N) - y;
-
-                var valuex = fbm(px, py) * Math.sin(y / N * Math.PI)
-                var valuey = fbm(px + 553, py + 123) * Math.sin(y / N * Math.PI)
-                path.push([px + valuex, py + valuey])
-            }
-            paths.push(path)
-        }
-
-        for (var y = 0; y <= N; y++) {
-            path = []
-            for (var x = 0; x <= N; x++) {
-
-                var px = x
-                var py = y
-
-                if (y % 2 == 0)
-                    px = (N) - x;
-
-                var valuex = fbm(px, py) * Math.sin(y / N * Math.PI)
-                var valuey = fbm(px + 553, py + 123) * Math.sin(y / N * Math.PI)
-                path.push([px + valuex, py + valuey])
-            }
-            paths.push(path)
-        }
-
-        var scale = 8000 / N
-        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
-        return (paths)
-    }
-
-
     this.createGridFromPoints = function (points) {
 
         paths = []
@@ -137,10 +79,10 @@ PathUtils = function () {
 
 
     this.gridTest = function () {
-        let N = 100
+        let N = 200
         noise.seed(Math.random());
-        noiseScale = N / 13
-        noiseFreq = 0.03
+        noiseScale = N / 5
+        noiseFreq = 0.003
 
         function fbm(x, y) {
             var val = 0
@@ -148,6 +90,7 @@ PathUtils = function () {
             val += noise.simplex2(x * noiseFreq * 2, y * noiseFreq * 2) * noiseScale / 2;
             val += noise.simplex2(x * noiseFreq * 4, y * noiseFreq * 4) * noiseScale / 4;
             val += noise.simplex2(x * noiseFreq * 8, y * noiseFreq * 8) * noiseScale / 8;
+            val += noise.simplex2(x * noiseFreq * 16, y * noiseFreq * 16) * noiseScale / 16;
 
             return val;
         }
@@ -160,8 +103,8 @@ PathUtils = function () {
                 var px = x
                 var py = y
 
-                var valuex = fbm(px, py) * Math.sin(y / N * Math.PI)
-                var valuey = fbm(px + 553, py + 123) * Math.sin(y / N * Math.PI)
+                var valuex = fbm(px, py); // * Math.sin(y / N * Math.PI)
+                var valuey = fbm(px + 553, py + 123); // * Math.sin(y / N * Math.PI)
                 row.push([px + valuex, py + valuey])
             }
             points.push(row)
@@ -180,6 +123,21 @@ PathUtils = function () {
 
 
     this.flowField = function () {
+        points = [
+            [Math.random(), Math.random()],
+            [Math.random(), Math.random()],
+            [Math.random(), Math.random()],
+            [Math.random(), Math.random()],
+            [Math.random(), Math.random()]
+        ]
+
+        charges = [
+            0.1 * (Math.random() - 0.5),
+            0.1 * (Math.random() - 0.5),
+            0.1 * (Math.random() - 0.5),
+            0.1 * (Math.random() - 0.5),
+            0.1 * (Math.random() - 0.5),
+        ]
 
         field = []
         dim = 50
@@ -208,27 +166,23 @@ PathUtils = function () {
             }
 
             function electricity(x, y) {
-                dx = x - 0.2;
-                dy = y - 0.3;
-                d1 = Math.sqrt(dx * dx + dy * dy);
-                E1 = 0.005 / (d1 * d1);
-                E1x = dx * E1 / d1;
-                E1y = dy * E1 / d1;
 
-                dxn = x - 0.7;
-                dyn = y - 0.5;
-                d2 = Math.sqrt(dxn * dxn + dyn * dyn);
-                E2 = -0.005 / (d2 * d2);
-                E2x = dxn * E2 / d2;
-                E2y = dyn * E2 / d2;
+                EEx = 0
+                EEy = 0
 
-                EEx = E1x + E2x;
-                EEy = E1y + E2y;
+                for (var i = 0; i < points.length; i++) {
+                    dx = x - points[i][0];
+                    dy = y - points[i][1];
+                    d1 = Math.sqrt(dx * dx + dy * dy);
+                    E1 = charges[i] / (d1 * d1);
+                    EEx += dx * E1 / d1;
+                    EEy += dy * E1 / d1;
+                }
 
-                EE = Math.sqrt(EEx * EEx + EEy * EEy);
+                len = Math.sqrt(EEx * EEx + EEy * EEy);
 
-                deltax = EEx / EE;
-                deltay = EEy / EE;
+                deltax = EEx / len;
+                deltay = EEy / len;
 
                 return [deltax, deltay]
                 // return [deltay, -deltax]
@@ -244,43 +198,60 @@ PathUtils = function () {
             // return field[Math.round(y)][Math.round(x)]
 
         }
-
-        const delta = 0.001
+        const dd = 20
+        const lineLength = 50
+        const delta = 0.005
         paths = []
-        for (var i = 0; i < 20; i++) {
-            for (var k = 0; k < 20; k++) {
+        for (var i = 0; i < dd; i++) {
+            for (var k = 0; k < dd; k++) {
                 path = []
                 // p = [Math.random(), Math.random()]
-                p = [(i + Math.random()) / 20, (k+ Math.random()) / 20]
+                p = [(i + Math.random()) / dd, (k + Math.random()) / dd]
                 // p = [0,i/200]
                 v = [0, 0]
 
                 // Math.random() * 0.01 - 0.005,
                 // Math.random() * 0.01 - 0.005]
 
-                for (var j = 0; j < 10; j++) {
+                for (var j = 0; j < lineLength; j++) {
                     var field = sampleField(p[0], p[1])
 
-                    v[0] += field[0]
-                    v[1] += field[1]
+                    v[0] = field[0]
+                    v[1] = field[1]
 
-                    pnew = [p[0] + v[0] * delta,
-                    p[1] + v[1] * delta]
+                    pnew = [p[0] + v[0] * delta, p[1] + v[1] * delta]
+
+                    tooclose= false
+                    for(var j = 0; j < points.length; j ++) {
+                        dx = points[j][0] - pnew[0]
+                        dy = points[j][1] - pnew[1]
+                        len = Math.sqrt(dx *dx + dy * dy)
+                        if(len < 0.01) {
+                            tooclose = true
+                            break
+                        }
+                    }
+                    if (tooclose) {
+                        break
+                    }
+
+                    if (pnew[0] < 0 || pnew[0] > 1 || pnew[1] < 0 || pnew[1] > 1.0)
+                        break;
 
                     path.push(pnew)
                     p = pnew;
 
                 }
-                console.log(path)
+                // console.log(path)
                 paths.push(path)
             }
         }
 
 
-        var scale = 2000
+        var scale = 5000
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
 
-        console.log(paths)
+        // console.log(paths)
         return (paths)
 
     }

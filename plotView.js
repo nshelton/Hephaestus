@@ -105,7 +105,7 @@ PlotViewer = function () {
     const a3Width = 297
     const a3Height = 420
 
-    this.addDragNDrop = function (node) {
+    this.addDragNDrop = function (node, reScale=false) {
         var bbox = new THREE.Box3().setFromObject(node);
 
         const bbgeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -116,6 +116,7 @@ PlotViewer = function () {
 
 
         var bbox = new THREE.Box3().setFromObject(node);
+        
         bbox.getCenter(this.boundingBox.position)
         bbox.getSize(this.boundingBox.scale)
         this.originalScale = this.boundingBox.scale.clone()
@@ -236,6 +237,17 @@ PlotViewer = function () {
 
         const line = new THREE.Line(linegeometry, linematerial);
         this.scene.add(line);
+
+        const points2 = [];
+        points2.push(new THREE.Vector3(230, 0, 0));
+        points2.push(new THREE.Vector3(230, 170, 0));
+        points2.push(new THREE.Vector3(0, 170, 0));
+
+        const linegeometry2 = new THREE.BufferGeometry().setFromPoints(points2);
+
+        const line2 = new THREE.Line(linegeometry2, linematerial);
+        this.scene.add(line2);
+
 
         render()
 
