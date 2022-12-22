@@ -1,5 +1,4 @@
 
-
 plotter = new Axidraw()
 viewer = new PlotViewer()
 pathUtils = new PathUtils()
@@ -45,7 +44,7 @@ function pause() { paused = true }
 function resume() { paused = false }
 
 window.addEventListener("keydown", (event) => {
-    
+
     if (event.isComposing || event.key === "229") {
         return;
     }
@@ -103,6 +102,34 @@ function removeAllChildNodes(parent) {
         parent.removeChild(parent.firstChild);
     }
 }
+function loadImage(file) {
+    createImageBitmap(file).then(data => {
+
+        const canvas = new OffscreenCanvas(data.width,data.height);
+        const ctx = canvas.getContext('2d');
+
+        console.log(data)
+        ctx.drawImage(data,0,0,data.width,data.height); 
+        console.log(ctx)
+
+        var imgd = ctx.getImageData(0, 0, data.width, data.height);
+        var pix = imgd.data;
+        console.log(pix)
+
+    })
+
+}
+
+function loadSVG(file) {
+    file.text().then(function (response) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(response, "image/svg+xml");
+        removeAllChildNodes(document.getElementById("svgContainer"))
+        document.getElementById("svgContainer").appendChild(doc.children[0]);
+        console.log(doc)
+        viewer.setupPlotView(doc)
+    });
+}
 
 function dropHandler(ev) {
     console.log('File(s) dropped');
@@ -111,14 +138,11 @@ function dropHandler(ev) {
         [...ev.dataTransfer.items].forEach((item, i) => {
             if (item.kind === 'file') {
                 const file = item.getAsFile();
-                file.text().then(function (response) {
-                    var parser = new DOMParser();
-                    var doc = parser.parseFromString(response, "image/svg+xml");
-                    removeAllChildNodes(document.getElementById("svgContainer"))
-                    document.getElementById("svgContainer").appendChild(doc.children[0]);
-                    console.log(doc)
-                    viewer.setupPlotView(doc)
-                });
+                if(file.name.endsWith(".svg")) {
+                    loadSVG(file)
+                } else {
+                    loadImage(file)
+                }
             }
         });
     }
@@ -135,7 +159,7 @@ function init() {
         resume: function () { resume() },
 
         grid: function () { viewer.AddPaths(pathUtils.gridTest()) },
-        rect: function () { viewer.AddPath(pathUtils.rectPath(100,100,1000,1000)) },
+        rect: function () { viewer.AddPath(pathUtils.rectPath(100, 100, 1000, 1000)) },
         circleGrid: function () { viewer.AddPaths(pathUtils.circleGrid()) },
         dragon: function () { viewer.AddPath(pathUtils.dragonPath()) },
         circle: function () { viewer.AddPath(pathUtils.circlePath(1000, 1000, 4000)) },

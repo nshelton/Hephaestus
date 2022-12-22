@@ -82,7 +82,7 @@ PathUtils = function () {
         let N = 200
         noise.seed(Math.random());
         noiseScale = N / 5
-        noiseFreq = 0.003
+        noiseFreq = 0.002
 
         function fbm(x, y) {
             var val = 0
@@ -103,8 +103,8 @@ PathUtils = function () {
                 var px = x
                 var py = y
 
-                var valuex = fbm(px, py); // * Math.sin(y / N * Math.PI)
-                var valuey = fbm(px + 553, py + 123); // * Math.sin(y / N * Math.PI)
+                var valuex = fbm(px, py) * Math.sin(y / N * Math.PI)
+                var valuey = fbm(px + 553, py + 123) * Math.sin(y / N * Math.PI)
                 row.push([px + valuex, py + valuey])
             }
             points.push(row)
@@ -114,12 +114,10 @@ PathUtils = function () {
 
         paths = this.createGridFromPoints(points)
 
-
         var scale = 8000 / N
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         return (paths)
     }
-
 
 
     this.flowField = function () {
