@@ -24,6 +24,8 @@ async function plotPath(paths) {
         queue.push(["up"])
     })
     moveTo([0, 0])
+
+    console.log(queue)
 }
 
 async function testPlot() {
@@ -75,19 +77,21 @@ async function consumeQueue() {
     if (!paused) {
         console.log("update", queue.length, plotter.commandsSent, plotter.commandsCompleted)
 
-        if (queue.length > 0) {
-            for (var i = 0; i < 10; i++) {
+        for (var i = 0; i < 10; i++) {
+            if (queue.length > 0) {
                 var next = queue.shift()
                 if (next) {
                     switch (next[0]) {
-                        case "move": plotter.move(next[1], next[2]); break;
-                        case "up": plotter.penUp(); break;
-                        case "down": plotter.penDown(); break;
+                        case "move": await plotter.move(next[1], next[2]); break;
+                        case "up": await plotter.penUp(); break;
+                        case "down": await plotter.penDown(); break;
                     }
                 }
             }
+            // await plotter.readResult();
         }
     }
+
 
     requestAnimationFrame(consumeQueue)
 }
@@ -105,11 +109,11 @@ function removeAllChildNodes(parent) {
 function loadImage(file) {
     createImageBitmap(file).then(data => {
 
-        const canvas = new OffscreenCanvas(data.width,data.height);
+        const canvas = new OffscreenCanvas(data.width, data.height);
         const ctx = canvas.getContext('2d');
 
         console.log(data)
-        ctx.drawImage(data,0,0,data.width,data.height); 
+        ctx.drawImage(data, 0, 0, data.width, data.height);
         console.log(ctx)
 
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
@@ -138,7 +142,7 @@ function dropHandler(ev) {
         [...ev.dataTransfer.items].forEach((item, i) => {
             if (item.kind === 'file') {
                 const file = item.getAsFile();
-                if(file.name.endsWith(".svg")) {
+                if (file.name.endsWith(".svg")) {
                     loadSVG(file)
                 } else {
                     loadImage(file)
@@ -154,7 +158,7 @@ function init() {
     var guiParams = {
         connect: function () { plotter.connect() },
         stop: function () { plotter.stop() },
-        plot: function () { testPlot() },
+        // plot: function () { testPlot() },
         pause: function () { pause() },
         resume: function () { resume() },
 
@@ -162,7 +166,7 @@ function init() {
         rect: function () { viewer.AddPath(pathUtils.rectPath(100, 100, 1000, 1000)) },
         circleGrid: function () { viewer.AddPaths(pathUtils.circleGrid()) },
         dragon: function () { viewer.AddPath(pathUtils.dragonPath()) },
-        circle: function () { viewer.AddPath(pathUtils.circlePath(1000, 1000, 4000)) },
+        circle: function () { viewer.AddPath(pathUtils.circlePath(2000, 2000, 4000, 5)) },
         flowField: function () { viewer.AddPaths(pathUtils.flowField()) },
         speed: 4,
         penUp: function () { plotter.penUp() },
@@ -184,7 +188,7 @@ function init() {
 
     var gui = new dat.GUI(guiParams);
 
-    gui.add(guiParams, 'connect')
+    // gui.add(guiParams, 'connect')
     gui.add(guiParams, 'pause')
     gui.add(guiParams, 'resume')
     gui.add(guiParams, 'stop')
@@ -199,12 +203,24 @@ function init() {
     gui.add(guiParams, 'flowField')
     gui.add(guiParams, 'circleGrid')
     gui.add(guiParams, 'circle')
-    gui.add(guiParams, 'plot')
-    gui.add(guiParams, 'createPlot')
+    // gui.add(guiParams, 'plot')
     gui.add(guiParams, 'disconnect')
+    gui.add(guiParams, 'createPlot')
 
     viewer.setupScene()
     consumeQueue()
 
 
+    setTimeout(() => {
+        plotter.connect()
+    }, "400")
+
+    setTimeout(() => {
+        viewer.AddPath(pathUtils.circlePath(3000, 3000, 4000, 100))
+
+        list = viewer.createPlotList()
+
+        console.log(list)
+
+    }, "1000")
 }

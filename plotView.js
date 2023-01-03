@@ -209,7 +209,6 @@ PlotViewer = function () {
     this.setupScene = function () {
         view = document.getElementById("plotViewContainer")
 
-
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById("plotViewContainer").appendChild(this.renderer.domElement);
 
