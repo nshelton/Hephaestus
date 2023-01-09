@@ -82,6 +82,7 @@ window.addEventListener("keydown", (event) => {
 async function readStatus() {
     if (plotter.commandsSent - plotter.commandsCompleted < 500) {
         await plotter.readResult()
+        customGui.update(queue, plotter);
     }
     requestAnimationFrame(readStatus)
 
@@ -170,8 +171,6 @@ function dragOverHandler(ev) { ev.preventDefault(); }
 
 function init() {
     var guiParams = {
-        connect: function () { plotter.connect() },
-        goHome: function () { plotter.goHome() },
         stop: function () { plotter.stop() },
         pause: function () { pause() },
         resume: function () { resume() },
@@ -202,15 +201,8 @@ function init() {
 
     var gui = new dat.GUI(guiParams);
 
-    // gui.add(guiParams, 'connect')
-    gui.add(guiParams, 'pause')
-    gui.add(guiParams, 'resume')
-    gui.add(guiParams, 'stop')
-    gui.add(guiParams, 'goHome')
     gui.add(guiParams, 'speed', 1, 10).onChange((val) => { plotter.speed = val; saveSettings("speed", val) })
     gui.add(guiParams, 'upPosition', 0, 33250).onChange((val) => { plotter.setPenUp(Math.round(val)); saveSettings("upPosition", val) })
-    gui.add(guiParams, 'penUp')
-    gui.add(guiParams, 'penDown')
     gui.add(guiParams, 'downPosition', 0, 33250).onChange((val) => { plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val) })
     gui.add(guiParams, 'rect')
     gui.add(guiParams, 'grid')
@@ -218,8 +210,6 @@ function init() {
     gui.add(guiParams, 'flowField')
     gui.add(guiParams, 'circleGrid')
     gui.add(guiParams, 'circle')
-    gui.add(guiParams, 'disconnect')
-    gui.add(guiParams, 'createPlot')
 
 
     app = {
@@ -243,12 +233,12 @@ function init() {
         plotter.connect()
     }, "400")
 
-    setTimeout(() => {
-        // viewer.AddPath(pathUtils.circlePath(3000, 3000, 4000, 100))
-        viewer.AddPaths(pathUtils.gridTest())
+    // setTimeout(() => {
+    //     // viewer.AddPath(pathUtils.circlePath(3000, 3000, 4000, 100))
+    //     viewer.AddPaths(pathUtils.flowField())
 
-        // list = viewer.createPlotList()
-        // console.log(list)
+    //     // list = viewer.createPlotList()
+    //     // console.log(list)
 
-    }, "1000")
+    // }, "1000")
 }

@@ -24,6 +24,7 @@ PlotterGUI = function() {
         this.plotButton.style.position = "absolute"
         this.plotButton.style.left = "0"
         this.plotButton.style.bottom = "0"
+        this.plotButton.style.border = "1px solid black"
         this.plotButton.onclick = app.plot
         this.plotButton.innerText = "GO"
         this.plotButton.style.width = "100px"
@@ -54,6 +55,18 @@ PlotterGUI = function() {
         this.penUp.style.border = "1px solid black"
         this.penUp.style.width = "100px"
         this.guiNode.appendChild(this.penUp)
+        
+        this.penUpValue = document.createElement("input")
+        this.penUpValue.type = "range"
+        this.penUpValue.style.backgroundColor = "#bbbbbb"
+        this.penUpValue.style.height = "30px"
+        this.penUpValue.style.position = "absolute"
+        this.penUpValue.style.right = "200px"
+        this.penUpValue.style.bottom = "60px"
+        this.penUpValue.onclick = app.penUpValue
+        this.penUpValue.style.border = "1px solid black"
+        this.penUpValue.style.width = "200px"
+        this.guiNode.appendChild(this.penUpValue)
 
         this.penDown = document.createElement("div")
         this.penDown.style.backgroundColor = "#bbbbbb"

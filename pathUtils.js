@@ -97,8 +97,8 @@ PathUtils = function () {
     this.gridTest = function () {
         let N = 50
         noise.seed(Math.random());
-        noiseScale = N / 80
-        noiseFreq = 0.09
+        noiseScale = N / 8
+        noiseFreq = 0.01
 
         function fbm(x, y) {
 
@@ -124,9 +124,9 @@ PathUtils = function () {
         }
         console.log(points)
 
-        // for ( var i = 0; i < 3; i ++) {
-            // points = this.relaxGrid(points)
-        // }
+        for ( var i = 0; i < 3; i ++) {
+            points = this.relaxGrid(points)
+        }
 
         paths = this.createGridFromPoints(points)
 
