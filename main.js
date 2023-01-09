@@ -2,10 +2,16 @@
 plotter = new Axidraw()
 viewer = new PlotViewer()
 pathUtils = new PathUtils()
+customGui = new PlotterGUI()
 
 var queue = []
 plotterPos = [0, 0]
 paused = false
+
+function goHome() {
+
+
+}
 
 function moveTo(p) {
     dx = Math.round(p[0] - plotterPos[0])
@@ -73,26 +79,34 @@ window.addEventListener("keydown", (event) => {
 });
 
 
-async function consumeQueue() {
-    if (!paused) {
-        console.log("update", queue.length, plotter.commandsSent, plotter.commandsCompleted)
+async function readStatus() {
+    if (plotter.commandsSent - plotter.commandsCompleted < 500) {
+        await plotter.readResult()
+    }
+    requestAnimationFrame(readStatus)
 
-        for (var i = 0; i < 10; i++) {
-            if (queue.length > 0) {
-                var next = queue.shift()
-                if (next) {
-                    switch (next[0]) {
-                        case "move": await plotter.move(next[1], next[2]); break;
-                        case "up": await plotter.penUp(); break;
-                        case "down": await plotter.penDown(); break;
+}
+
+async function consumeQueue() {
+    console.log("update", queue.length, plotter.commandsSent, plotter.commandsCompleted)
+    if (!paused) {
+
+        if (plotter.commandsSent - plotter.commandsCompleted < 500) {
+            for (var i = 0; i < 100; i++) {
+                if (queue.length > 0) {
+                    var next = queue.shift()
+                    if (next) {
+                        customGui.update(queue, plotter);
+                        switch (next[0]) {
+                            case "move": await plotter.move(next[1], next[2]); break;
+                            case "up": await plotter.penUp(); break;
+                            case "down": await plotter.penDown(); break;
+                        }
                     }
                 }
             }
-            // await plotter.readResult();
         }
     }
-
-
     requestAnimationFrame(consumeQueue)
 }
 
@@ -157,8 +171,8 @@ function dragOverHandler(ev) { ev.preventDefault(); }
 function init() {
     var guiParams = {
         connect: function () { plotter.connect() },
+        goHome: function () { plotter.goHome() },
         stop: function () { plotter.stop() },
-        // plot: function () { testPlot() },
         pause: function () { pause() },
         resume: function () { resume() },
 
@@ -192,9 +206,10 @@ function init() {
     gui.add(guiParams, 'pause')
     gui.add(guiParams, 'resume')
     gui.add(guiParams, 'stop')
-    gui.add(guiParams, 'penUp')
+    gui.add(guiParams, 'goHome')
     gui.add(guiParams, 'speed', 1, 10).onChange((val) => { plotter.speed = val; saveSettings("speed", val) })
     gui.add(guiParams, 'upPosition', 0, 33250).onChange((val) => { plotter.setPenUp(Math.round(val)); saveSettings("upPosition", val) })
+    gui.add(guiParams, 'penUp')
     gui.add(guiParams, 'penDown')
     gui.add(guiParams, 'downPosition', 0, 33250).onChange((val) => { plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val) })
     gui.add(guiParams, 'rect')
@@ -203,24 +218,37 @@ function init() {
     gui.add(guiParams, 'flowField')
     gui.add(guiParams, 'circleGrid')
     gui.add(guiParams, 'circle')
-    // gui.add(guiParams, 'plot')
     gui.add(guiParams, 'disconnect')
     gui.add(guiParams, 'createPlot')
 
-    viewer.setupScene()
-    consumeQueue()
 
+    app = {
+        plot: function () { plotPath(viewer.createPlotList()) },
+        disengage: function () {
+            plotter.penUp();
+            plotter.close();
+        },
+        penUp: function () { plotter.penUp() },
+        penDown: function () { plotter.penDown() }
+
+    }
+
+    viewer.setupScene()
+    customGui.init(app);
+
+    consumeQueue()
+    readStatus()
 
     setTimeout(() => {
         plotter.connect()
     }, "400")
 
     setTimeout(() => {
-        viewer.AddPath(pathUtils.circlePath(3000, 3000, 4000, 100))
+        // viewer.AddPath(pathUtils.circlePath(3000, 3000, 4000, 100))
+        viewer.AddPaths(pathUtils.gridTest())
 
-        list = viewer.createPlotList()
-
-        console.log(list)
+        // list = viewer.createPlotList()
+        // console.log(list)
 
     }, "1000")
 }

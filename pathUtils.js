@@ -71,20 +71,37 @@ PathUtils = function () {
             paths.push(path)
         }
 
-
-
-
         return paths
     }
 
+    this.relaxGrid = function (p) {
+
+        function add(a, b) { return [a[0] + b[0], a[1] + b[1]] }
+
+        for (var x = 1; x < p.length - 1; x++) {
+            for (var y = 1; y < p[x].length - 1; y++) {
+
+                sum = [0, 0]
+                for (var i = -1; i < 2; i++) {
+                    for (var j = -1; j < 2; j++) {
+                        sum = add(sum, p[x + i][y + j])
+                    }
+                }
+                p[x][y] = [sum[0] / 9, sum[1] / 9]
+            }
+        }
+
+        return p
+    }
 
     this.gridTest = function () {
-        let N = 200
+        let N = 50
         noise.seed(Math.random());
-        noiseScale = N / 5
-        noiseFreq = 0.002
+        noiseScale = N / 80
+        noiseFreq = 0.09
 
         function fbm(x, y) {
+
             var val = 0
             val += noise.simplex2(x * noiseFreq, y * noiseFreq) * noiseScale;
             val += noise.simplex2(x * noiseFreq * 2, y * noiseFreq * 2) * noiseScale / 2;
@@ -99,22 +116,21 @@ PathUtils = function () {
         for (var x = 0; x <= N; x++) {
             row = []
             for (var y = 0; y <= N; y++) {
-
-                var px = x
-                var py = y
-
-                var valuex = fbm(px, py) * Math.sin(y / N * Math.PI)
-                var valuey = fbm(px + 553, py + 123) * Math.sin(y / N * Math.PI)
-                row.push([px + valuex, py + valuey])
+                var valuex = fbm(x, y) * Math.sin(y / N * Math.PI)
+                var valuey = fbm(x + 553, y + 123) * Math.sin(y / N * Math.PI)
+                row.push([x + valuex, y + valuey])
             }
             points.push(row)
         }
         console.log(points)
 
+        // for ( var i = 0; i < 3; i ++) {
+            // points = this.relaxGrid(points)
+        // }
 
         paths = this.createGridFromPoints(points)
 
-        var scale = 8000 / N
+        var scale = 18000 / N
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         return (paths)
     }
@@ -219,12 +235,12 @@ PathUtils = function () {
 
                     pnew = [p[0] + v[0] * delta, p[1] + v[1] * delta]
 
-                    tooclose= false
-                    for(var j = 0; j < points.length; j ++) {
+                    tooclose = false
+                    for (var j = 0; j < points.length; j++) {
                         dx = points[j][0] - pnew[0]
                         dy = points[j][1] - pnew[1]
-                        len = Math.sqrt(dx *dx + dy * dy)
-                        if(len < 0.01) {
+                        len = Math.sqrt(dx * dx + dy * dy)
+                        if (len < 0.01) {
                             tooclose = true
                             break
                         }

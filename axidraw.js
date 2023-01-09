@@ -45,27 +45,25 @@ Axidraw = function () {
     this.setPenUp = async function (val) { return await this.writeCommand(`SC,4,${val}`) }
     this.setPenDown = async function (val) { return await this.writeCommand(`SC,5,${val}`) }
 
-
-
     this.commandsSent = 0
     this.commandsCompleted = 0
 
     this.writeCommand = async function (command) {
-        // if (!this.connected) { await this.connect(); }
+        if (!this.connected) { await this.connect(); }
 
-        console.log(command)
+        // console.log(command)
         this.commandsSent++;
         await this.writer.write(this.textEncoder.encode(command + "\r"));
-        return await this.readResult()
+        // return await this.readResult()
     }
 
     this.close = async function () {
         await this.penUp()
         await this.disableMotor()
         await this.readResult()
-        await this.writer.releaseLock();
-        await this.port.close();
-        this.connected = false
+        // await this.writer.releaseLock();
+        // await this.port.close();
+        // this.connected = false
     }
 
     this.readResult = async function () {
