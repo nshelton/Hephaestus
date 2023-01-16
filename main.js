@@ -39,10 +39,12 @@ async function testPlot() {
     var startpos = plotterPos
     for (var x = 0; x < 10; x++) {
         for (var y = 0; y < 10; y++) {
+
             var dim = 1000
             // path = circlePath(x * 1000, y * 1000, 1000, 30)
             path = pathUtils.rectPath(x * dim, y * dim, dim, dim)
             plotPath(path)
+
         }
     }
     queue.push(["move", dx, dy])
@@ -202,7 +204,7 @@ function init() {
     var gui = new dat.GUI(guiParams);
 
     gui.add(guiParams, 'speed', 1, 10).onChange((val) => { plotter.speed = val; saveSettings("speed", val) })
-    gui.add(guiParams, 'upPosition', 0, 33250).onChange((val) => { plotter.setPenUp(Math.round(val)); saveSettings("upPosition", val) })
+    gui.add(guiParams, 'upPosition', 0, 33250).onChange((val) => {  })
     gui.add(guiParams, 'downPosition', 0, 33250).onChange((val) => { plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val) })
     gui.add(guiParams, 'rect')
     gui.add(guiParams, 'grid')
@@ -219,7 +221,17 @@ function init() {
             plotter.close();
         },
         penUp: function () { plotter.penUp() },
-        penDown: function () { plotter.penDown() }
+        penDown: function () { plotter.penDown() },
+
+        setPenUpValue: function (value) { 
+            console.log("setPenUpValue", value)
+            plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val)
+        },
+        setPenDownValue: function (value) { 
+            
+            console.log("setPenDownValue", value) 
+            plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val)
+        }
 
     }
 
