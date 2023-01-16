@@ -153,17 +153,6 @@ PathUtils = function () {
             0.1 * (Math.random() - 0.5),
         ]
 
-        field = []
-        dim = 50
-
-        for (var y = 0; y < 50; y++) {
-            row = []
-            for (var x = 0; x < 50; x++) {
-                row.push([Math.sin(x / 10), 1])
-            }
-            field.push(row)
-        }
-
         function sampleField(x, y) {
 
             function gravity(x, y, px, py) {
@@ -212,10 +201,12 @@ PathUtils = function () {
             // return field[Math.round(y)][Math.round(x)]
 
         }
-        const dd = 20
-        const lineLength = 50
+
+        const dd = 15
+        const lineLength = 20
         const delta = 0.005
         paths = []
+
         for (var i = 0; i < dd; i++) {
             for (var k = 0; k < dd; k++) {
                 path = []
@@ -261,10 +252,11 @@ PathUtils = function () {
             }
         }
 
-
-        var scale = 5000
+        var scale = 8000
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
-
+        tx = - 1000
+        ty = - 1000
+        paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
         // console.log(paths)
         return (paths)
 
@@ -346,5 +338,43 @@ PathUtils = function () {
         return (paths)
     }
 
+
+    this.text = function(theString) {
+        paths = []
+        offset = 0
+        fontWidth = 16
+        for (var i = 0; i < theString.length; i ++) {
+
+            pathString = fontGlyphs[theString[i]].join(" ")
+            console.log(pathString)
+
+            parsed = window.PathConverter.parse(pathString);
+            console.log(theString[i])
+            console.log(parsed)
+
+            if (parsed.current != null) {
+                var segment = parsed.current.points.map(p => [p.main.x + offset, p.main.y])
+                paths.push(segment)
+            }
+
+            parsed.curveshapes.forEach(c => {
+                if (c && c.points != null) {
+                    curve = c.points.map(p => [p.main.x+ offset, p.main.y])
+                    paths.push(curve)
+                    console.log(curve)
+                }
+            })
+            offset += fontWidth
+
+        }
+        console.log(paths)
+
+        var scale = 200
+        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
+        tx = -2000
+        ty = 5000
+        paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+        return paths
+    }
 }
 

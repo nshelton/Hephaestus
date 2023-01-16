@@ -4,16 +4,20 @@ PlotterGUI = function() {
 
     this.setPenUpValue = function(val) {
         this.upValueText.innerText = val
-        app.setPenUpValue(val)
-        plotter.setPenUp(Math.round(val)); 
-        saveSettings("upPosition", val)
+        this.penUpSlider.value = val
+        this.app.setPenUpValue(val)
     }
 
     this.setPenDownValue = function(val) {
         this.downValueText.innerText = val
-        app.setPenDownValue(val)
-
-        
+        this.penDownSlider.value = val
+        this.app.setPenDownValue(val)
+    }
+    
+    this.setSpeedValue = function(val) {
+        this.speedValueText.innerText = "speed:\t" +  Math.round(val*100) / 100
+        this.speedSlider.value = val
+        this.app.setSpeedValue(val)
     }
 
     this.init = function (app) {
@@ -28,7 +32,7 @@ PlotterGUI = function() {
             theButton.style.position = "absolute"
             theButton.style.left = x
             theButton.style.bottom = y
-            theButton.style.border = "1px solid black"
+            // theButton.style.border = "1px solid black"
             theButton.onclick = onclick
             theButton.innerText = text
             theButton.style.width = "100px"
@@ -36,21 +40,19 @@ PlotterGUI = function() {
         }   
 
         function makeText(text, x, y) {
-            theButton = document.createElement("div")
-            theButton.style.height = "30px"
-            // theButton.style.textAlign = "center"
-            theButton.style.position = "absolute"
-            theButton.style.left = x
-            theButton.style.bottom = y
-            // theButton.style.border = "1px solid black"
-            // theButton.onclick = app.plot
-            theButton.innerText = text
-            theButton.style.width = "100px"
-            return theButton
+            theText = document.createElement("div")
+            theText.style.height = "30px"
+            // theText.style.textAlign = "center"
+            theText.style.position = "absolute"
+            theText.style.left = x
+            theText.style.bottom = y
+            // theText.style.border = "1px solid black"
+            // theText.onclick = app.plot
+            theText.innerText = text
+            theText.style.width = "100px"
+            return theText
         }   
 
-
-        
         this.progressbar = document.createElement("div")
         this.progressbar.style.backgroundColor = "#00ff00"
         this.progressbar.style.height = "10px"
@@ -62,8 +64,11 @@ PlotterGUI = function() {
         this.guiNode.appendChild(this.queuebar)
 
         this.plotButton = makeButton("GO", 0, 0, app.plot)
-        this.plotButton.style.height = "100px"
+        this.plotButton.style.height = "80px"
         this.guiNode.appendChild(this.plotButton)
+
+        this.pauseButton = makeButton("pause", 0, 100, app.pause)
+        this.guiNode.appendChild(this.pauseButton)
 
         this.disengageButton = makeButton("disengage", 200, 0, app.disengage)
         this.guiNode.appendChild(this.disengageButton)
@@ -76,44 +81,56 @@ PlotterGUI = function() {
 
         this.penUpSlider = document.createElement("input")
         this.penUpSlider.type = "range"
-        this.penUpSlider.style.backgroundColor = "#bbbbbb"
         this.penUpSlider.style.height = "30px"
         this.penUpSlider.style.position = "absolute"
         this.penUpSlider.style.left = "350px"
-        this.penUpSlider.style.bottom = "100px"
-        this.penUpSlider.min = 0
-        this.penUpSlider.max = 33250
+        this.penUpSlider.style.bottom = "50px"
+        this.penUpSlider.min = 10000
+        this.penUpSlider.max = 30000
         this.penUpSlider.onchange = (e) => {this.setPenUpValue(e.target.value)}
-        this.penUpSlider.style.width = "200px"
+        this.penUpSlider.style.width = "500px"
         this.guiNode.appendChild(this.penUpSlider)
+
+        this.upValueText = makeText("upValue", 400, 30)
+        this.guiNode.appendChild(this.upValueText)
 
         this.penDownSlider = document.createElement("input")
         this.penDownSlider.type = "range"
-        this.penDownSlider.style.backgroundColor = "#bbbbbb"
         this.penDownSlider.style.height = "30px"
         this.penDownSlider.style.position = "absolute"
         this.penDownSlider.style.left = "350px"
-        this.penDownSlider.style.bottom = "50px"
-        this.penDownSlider.min = 0
-        this.penDownSlider.max = 33250
+        this.penDownSlider.style.bottom = "100px"
+        this.penDownSlider.min = 10000
+        this.penDownSlider.max = 30000
         this.penDownSlider.onchange = (e) => {this.setPenDownValue(e.target.value)}
-        this.penDownSlider.style.width = "200px"
+        this.penDownSlider.style.width = "500px"
         this.guiNode.appendChild(this.penDownSlider)
-
-        
-        this.upValueText = makeText("upValue", 400, 30)
-        this.guiNode.appendChild(this.upValueText)
 
         this.downValueText = makeText("downValue", 400, 80)
         this.guiNode.appendChild(this.downValueText)
 
+
+        this.speedSlider = document.createElement("input")
+        this.speedSlider.type = "range"
+        this.speedSlider.style.height = "30px"
+        this.speedSlider.style.position = "absolute"
+        this.speedSlider.style.left = "350px"
+        this.speedSlider.style.bottom = "0px"
+        this.speedSlider.min = 0
+        this.speedSlider.max = 10
+        this.speedSlider.step = 0.1
+
+        this.speedSlider.onchange = (e) => {this.setSpeedValue(e.target.value)}
+        this.speedSlider.style.width = "200px"
+        this.guiNode.appendChild(this.speedSlider)
+
+        this.speedValueText = makeText("speed", 600, 00)
+        this.guiNode.appendChild(this.speedValueText)
+
         this.debugText = document.createElement("div")
 
         this.guiNode.appendChild(this.debugText)
-
     }
-
-
 
     this.update = function (queue, plotter) {
 
@@ -124,8 +141,7 @@ PlotterGUI = function() {
 
         percent = Math.round(100 * plotter.commandsSent / total)
         this.queuebar.style.width = percent + "%"
-
-
+        
         // this.progressbar.style.width =  "60%"
         // this.queuebar.style.width = "70%"
 

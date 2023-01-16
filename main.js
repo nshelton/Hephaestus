@@ -21,64 +21,55 @@ function moveTo(p) {
 }
 
 async function plotPath(paths) {
+
+    paths = paths.filter(p => p.length > 0)
     paths.forEach(path => {
+
+
         moveTo(path[0])
+        // queue.push(["query"])
         queue.push(["down"])
         for (var i = 1; i < path.length; i++) {
             moveTo(path[i])
         }
         queue.push(["up"])
+        // queue.push(["query"])
     })
+
     moveTo([0, 0])
 
     console.log(queue)
 }
 
-async function testPlot() {
-
-    var startpos = plotterPos
-    for (var x = 0; x < 10; x++) {
-        for (var y = 0; y < 10; y++) {
-
-            var dim = 1000
-            // path = circlePath(x * 1000, y * 1000, 1000, 30)
-            path = pathUtils.rectPath(x * dim, y * dim, dim, dim)
-            plotPath(path)
-
-        }
-    }
-    queue.push(["move", dx, dy])
-}
-
 function pause() { paused = true }
 function resume() { paused = false }
 
-window.addEventListener("keydown", (event) => {
+// window.addEventListener("keydown", (event) => {
 
-    if (event.isComposing || event.key === "229") {
-        return;
-    }
+//     if (event.isComposing || event.key === "229") {
+//         return;
+//     }
 
-    if (event.key == "b") {
-        var count = 0
-        while (true) {
-            var next = queue.shift()
-            if (next)
-                switch (next[0]) {
-                    case "move": plotter.move(next[1], next[2]); break;
-                    case "up": plotter.penUp(); break;
-                    case "down": plotter.penDown(); break;
-                }
-            count++
+//     if (event.key == "b") {
+//         var count = 0
+//         while (true) {
+//             var next = queue.shift()
+//             if (next)
+//                 switch (next[0]) {
+//                     case "move": plotter.move(next[1], next[2]); break;
+//                     case "up": plotter.penUp(); break;
+//                     case "down": plotter.penDown(); break;
+//                 }
+//             count++
 
-            if (count > 1000 || next[0] == "up") {
-                break;
-            }
-        }
+//             if (count > 1000 || next[0] == "up") {
+//                 break;
+//             }
+//         }
 
-    }
-    // do something
-});
+//     }
+//     // do something
+// });
 
 
 async function readStatus() {
@@ -87,10 +78,10 @@ async function readStatus() {
         customGui.update(queue, plotter);
     }
     requestAnimationFrame(readStatus)
-
 }
 
 async function consumeQueue() {
+
     console.log("update", queue.length, plotter.commandsSent, plotter.commandsCompleted)
     if (!paused) {
 
@@ -104,12 +95,14 @@ async function consumeQueue() {
                             case "move": await plotter.move(next[1], next[2]); break;
                             case "up": await plotter.penUp(); break;
                             case "down": await plotter.penDown(); break;
+                            case "query": await plotter.query(); break;
                         }
                     }
                 }
             }
         }
     }
+
     requestAnimationFrame(consumeQueue)
 }
 
@@ -117,12 +110,12 @@ function saveSettings(key, value) {
     window.localStorage.setItem("plotter_" + key, value)
 }
 
-
 function removeAllChildNodes(parent) {
     while (parent.firstChild) {
         parent.removeChild(parent.firstChild);
     }
 }
+
 function loadImage(file) {
     createImageBitmap(file).then(data => {
 
@@ -173,9 +166,6 @@ function dragOverHandler(ev) { ev.preventDefault(); }
 
 function init() {
     var guiParams = {
-        stop: function () { plotter.stop() },
-        pause: function () { pause() },
-        resume: function () { resume() },
 
         grid: function () { viewer.AddPaths(pathUtils.gridTest()) },
         rect: function () { viewer.AddPath(pathUtils.rectPath(100, 100, 1000, 1000)) },
@@ -183,29 +173,13 @@ function init() {
         dragon: function () { viewer.AddPath(pathUtils.dragonPath()) },
         circle: function () { viewer.AddPath(pathUtils.circlePath(2000, 2000, 4000, 5)) },
         flowField: function () { viewer.AddPaths(pathUtils.flowField()) },
-        speed: 4,
-        penUp: function () { plotter.penUp() },
-        upPosition: 24017,
-        penDown: function () { plotter.penDown() },
-        downPosition: 12000,
-        disconnect: function () { plotter.close() },
-        createPlot: function () { plotPath(viewer.createPlotList()) },
+
     };
 
     //load Settings
 
-    ["speed", "upPosition", "downPosition"].forEach(key => {
-        if (window.localStorage.getItem("plotter_" + key) != null) {
-            guiParams[key] = Number(window.localStorage.getItem("plotter_" + key))
-
-        }
-    })
-
     var gui = new dat.GUI(guiParams);
 
-    gui.add(guiParams, 'speed', 1, 10).onChange((val) => { plotter.speed = val; saveSettings("speed", val) })
-    gui.add(guiParams, 'upPosition', 0, 33250).onChange((val) => {  })
-    gui.add(guiParams, 'downPosition', 0, 33250).onChange((val) => { plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val) })
     gui.add(guiParams, 'rect')
     gui.add(guiParams, 'grid')
     gui.add(guiParams, 'dragon')
@@ -222,15 +196,22 @@ function init() {
         },
         penUp: function () { plotter.penUp() },
         penDown: function () { plotter.penDown() },
+        pause: function () { paused = !paused },
 
-        setPenUpValue: function (value) { 
-            console.log("setPenUpValue", value)
-            plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val)
+        setPenUpValue: function (val) {
+            console.log("setPenUpValue", val)
+            plotter.setPenUp(Math.round(val));
+            saveSettings("upPosition", val)
         },
-        setPenDownValue: function (value) { 
-            
-            console.log("setPenDownValue", value) 
-            plotter.setPenDown(Math.round(val)); saveSettings("downPosition", val)
+        setPenDownValue: function (val) {
+            console.log("setPenDownValue", val)
+            plotter.setPenDown(Math.round(val));
+            saveSettings("downPosition", val)
+        },
+        setSpeedValue: function (val) {
+            console.log("setSpeedValue", val)
+            plotter.speed = val;
+            saveSettings("speed", val)
         }
 
     }
@@ -240,10 +221,30 @@ function init() {
 
     consumeQueue()
     readStatus()
+    plotter.connect()
 
     setTimeout(() => {
-        plotter.connect()
-    }, "400")
+        if (window.localStorage.getItem("plotter_upPosition") != null) {
+            customGui.setPenUpValue(Number(window.localStorage.getItem("plotter_upPosition")))
+        }
+        if (window.localStorage.getItem("plotter_downPosition") != null) {
+            customGui.setPenDownValue(Number(window.localStorage.getItem("plotter_downPosition")))
+        }
+        if (window.localStorage.getItem("plotter_speed") != null) {
+            customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
+        }
+
+        // viewer.AddPaths(pathUtils.flowField())
+        textstring = new Date().toLocaleString()
+        console.log(textstring)
+        viewer.AddPaths(pathUtils.text(textstring))
+
+    }, "100")
+
+
+
+
+
 
     // setTimeout(() => {
     //     // viewer.AddPath(pathUtils.circlePath(3000, 3000, 4000, 100))
