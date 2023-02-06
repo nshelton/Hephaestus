@@ -1,4 +1,3 @@
-
 PathUtils = function () {
 
     this.circlePath = function (cx, cy, radius, segments = 100) {
@@ -124,7 +123,7 @@ PathUtils = function () {
         }
         console.log(points)
 
-        for ( var i = 0; i < 3; i ++) {
+        for (var i = 0; i < 3; i++) {
             points = this.relaxGrid(points)
         }
 
@@ -259,7 +258,6 @@ PathUtils = function () {
         paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
         // console.log(paths)
         return (paths)
-
     }
 
     this.circleGrid = function () {
@@ -339,18 +337,14 @@ PathUtils = function () {
     }
 
 
-    this.text = function(theString) {
+    this.text = function (theString) {
         paths = []
         offset = 0
         fontWidth = 16
-        for (var i = 0; i < theString.length; i ++) {
+        for (var i = 0; i < theString.length; i++) {
 
             pathString = fontGlyphs[theString[i]].join(" ")
-            console.log(pathString)
-
             parsed = window.PathConverter.parse(pathString);
-            console.log(theString[i])
-            console.log(parsed)
 
             if (parsed.current != null) {
                 var segment = parsed.current.points.map(p => [p.main.x + offset, p.main.y])
@@ -359,22 +353,286 @@ PathUtils = function () {
 
             parsed.curveshapes.forEach(c => {
                 if (c && c.points != null) {
-                    curve = c.points.map(p => [p.main.x+ offset, p.main.y])
+                    curve = c.points.map(p => [p.main.x + offset, p.main.y])
                     paths.push(curve)
-                    console.log(curve)
                 }
             })
             offset += fontWidth
 
         }
+
+        var scale = 20
+        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
+        // tx = -2000
+        // ty = 5000
+        // paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+        return paths
+    }
+
+    this.mandala = function () {
+
+        paths = []
+
+        circles = []
+
+        circle = this.circlePath(0, 0, 40, 100)
+        paths.push(circle)
+
+        for (var i = 0; i < 6; i++) {
+            angle = Math.PI * 2 * i / 6
+
+            // paths.push(this.circlePath(r * Math.cos(angle), r * Math.sin(angle), 50, 50))
+            r = 99
+            paths.push(this.circlePath(r * Math.cos(angle), r * Math.sin(angle), 10, 50))
+
+        }
+        for (var i = 0; i < 12; i++) {
+            angle = Math.PI * 2 * i / 12
+
+            r = 40
+            paths.push(this.circlePath(r * Math.cos(angle), r * Math.sin(angle), 10, 50))
+
+            r = 80
+            circle = this.circlePath(r * Math.cos(angle), r * Math.sin(angle), 40, 50)
+
+            r = 99
+            paths.push(this.circlePath(r * Math.cos(angle), r * Math.sin(angle), 20, 50))
+
+            paths.push(circle)
+        }
+
+        var scale = 20
+        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
+        tx = 2000
+        ty = 2000
+        paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+        return paths
+
+    }
+
+
+    this.apollonian = function () {
+
+        function getInner(c1, c2, c3) {
+
+            var r = (c1.r * c2.r * c3.r) / (c1.r * c2.r + c1.r * c3.r + c2.r * c3.r + 2 * Math.sqrt(c1.r * c2.r * c3.r * (c1.r + c2.r + c3.r)));
+
+            var a = 2 * (c1.cx - c2.cx);
+            var ap = 2 * (c1.cx - c3.cx);
+
+            var b = 2 * (c1.cy - c2.cy);
+            var bp = 2 * (c1.cy - c3.cy);
+
+            var C1 = 2 * (0 + c1.r + c2.r);
+            var C1p = 2 * (0 + c1.r + c3.r);
+            var C2 = 2 * (0 + c1.r - c2.r);
+            var C2p = 2 * (0 + c1.r - c3.r);
+            var C3 = 2 * (0 - c1.r + c2.r);
+            var C3p = 2 * (0 - c1.r + c3.r);
+            var C4 = 2 * (0 - c1.r - c2.r);
+            var C4p = 2 * (0 - c1.r - c3.r);
+
+            var d = ((c1.cx * c1.cx) + (c1.cy * c1.cy) - (c1.r * c1.r)) - ((c2.cx * c2.cx) + (c2.cy * c2.cy) - (c2.r * c2.r));
+            var dp = ((c1.cx * c1.cx) + (c1.cy * c1.cy) - (c1.r * c1.r)) - ((c3.cx * c3.cx) + (c3.cy * c3.cy) - (c3.r * c3.r));
+
+            var x = [(bp * d - b * dp - bp * C1 * r + b * C1p * r) / (a * bp - b * ap), (bp * d - b * dp - bp * C2 * r + b * C2p * r) / (a * bp - b * ap), (bp * d - b * dp - bp * C3 * r + b * C3p * r) / (a * bp - b * ap), (bp * d - b * dp - bp * C4 * r + b * C4p * r) / (a * bp - b * ap)];
+            var y = [((0 - ap) * d + a * dp + ap * C1 * r - a * C1p * r) / (a * bp - ap * b), ((0 - ap) * d + a * dp + ap * C2 * r - a * C2p * r) / (a * bp - ap * b), ((0 - ap) * d + a * dp + ap * C3 * r - a * C3p * r) / (a * bp - ap * b), ((0 - ap) * d + a * dp + ap * C4 * r - a * C4p * r) / (a * bp - ap * b)];
+
+            var ci = -1;
+            var shortest = 100;
+
+            for (var k = 0; k < x.length; k++) {
+                var diff = Math.abs(r + c1.r - Math.sqrt(Math.abs(c1.cx - x[k]) * Math.abs(c1.cx - x[k]) + Math.abs(c1.cy - y[k]) * Math.abs(c1.cy - y[k])));
+                if (shortest > diff) {
+                    shortest = diff;
+                    ci = k;
+                }
+            }
+            console.log("x", x, ci, y)
+            return { "cx": x[ci], "cy": y[ci], "r": r };
+        }
+
+        minRadius = 1
+        function generateGasket(c1, c2, c3, depth) {
+            if (depth > 0) {
+                var inner = getInner(c1, c2, c3);
+                if (inner.r < minRadius) {
+                    return;
+                }
+                circles.push(inner);
+                console.log(inner)
+
+                generateGasket(c1, c2, inner, depth - 1);
+                generateGasket(c1, inner, c3, depth - 1);
+                generateGasket(inner, c2, c3, depth - 1);
+            }
+        }
+
+        circles = []
+
+        function getCircle(r, angle, rad) {
+            return { cx: r * Math.cos(angle), cy: r * Math.sin(angle), r: rad }
+        }
+
+        circles.push({ cx: 0, cy: 0, r: 1000 })
+
+        sqrt32 = Math.sqrt(3) / 2
+        k = 1000 / (1 + sqrt32)
+
+        circles.push(getCircle(k, Math.PI * 0, k * sqrt32))
+        circles.push(getCircle(k, Math.PI * 2 / 3, k * sqrt32))
+        circles.push(getCircle(k, Math.PI * 4 / 3, k * sqrt32))
+
+        generateGasket(circles[0], circles[1], circles[2], 1)
+
+        console.log(circles)
+        paths = circles.slice(0).map(c => this.circlePath(c.cx, c.cy, c.r, 100))
         console.log(paths)
 
-        var scale = 200
+        var scale = 10
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
-        tx = -2000
+        tx = 5000
         ty = 5000
         paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
         return paths
-    }
-}
 
+    }
+
+    this.sierpinski  = function () {
+        const that = this;
+        sqrt32 = Math.sqrt(3) / 2
+        paths = []
+
+        tri = [[-0.5, 0], [0.5, 0], [0, sqrt32], [-0.5, 0]]
+
+        function subdivide(pos, level) {
+
+            var scale = 1 / Math.pow(2.0, level)
+
+            if (level > 6) {
+                // paths.push(tri.map(p => [p[0] * scale *2 + pos[0], p[1] * scale *2 + pos[1]]))
+                paths.push(that.circlePath(pos[0], pos[1], scale, 10))
+                return
+            }
+
+            subdivide([pos[0] + tri[0][0] * scale, pos[1] + tri[0][1] * scale], level+1)
+            subdivide([pos[0] + tri[1][0] * scale, pos[1] + tri[1][1] * scale], level+1)
+            subdivide([pos[0] + tri[2][0] * scale, pos[1] + tri[2][1] * scale], level+1)
+        }
+
+
+        subdivide([0,0], 1)
+
+
+        var scale = 15000
+        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
+        tx = 5000
+        ty = 100
+        paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+
+        console.log(paths)
+        return paths
+
+
+    }
+
+    this.cyrb128 = function(str) {
+        let h1 = 1779033703, h2 = 3144134277,
+            h3 = 1013904242, h4 = 2773480762;
+        for (let i = 0, k; i < str.length; i++) {
+            k = str.charCodeAt(i);
+            h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+            h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+            h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+            h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+        }
+        h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+        h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+        h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+        h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+        return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+    }
+
+    this.voronoi  = function () {
+
+        function mulberry32(a) {
+            return function() {
+              var t = a += 0x6D2B79F5;
+              t = Math.imul(t ^ t >>> 15, t | 1);
+              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+              return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+                // Create cyrb128 state:
+        var seed = this.cyrb128("happy apple");
+
+        // Only one 32-bit component hash is needed for mulberry32.
+        var rand = mulberry32(seed[0]);
+
+        function gauss() {
+            let sigma = 2
+            let val = 1
+            for (var i = 0;i < sigma; i ++) {
+                val *= 2.0 * (rand() - 0.5)
+            }
+            return val
+        }
+
+        nPoints = 40
+        points = []
+        for(var i = 0; i < nPoints; i ++) {
+            p = [gauss(), gauss()]
+            points.push(p)
+        }
+        paths = []
+        // paths = points.map(p => this.circlePath(p[0], p[1], 0.03, 30))
+        
+        function dist(a,b) {
+            return Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]))
+        }
+
+        // for (var i = 0;i < points.length; i++) {
+        //     for (var j = 0;j < points.length; j++) {
+
+        // }
+
+        bbox= {xl:-1,xr:1,yt:-1,yb:1}
+        voronoi = new Voronoi()
+        sites = points.map(p => {return {x:p[0], y:p[1]}})
+        diagram = voronoi.compute(sites, bbox);
+
+        diagram.edges.forEach(edge => {
+           paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
+        });
+
+        console.log(diagram)
+
+        // var inSet = []
+
+        // points.forEach(p => {
+        //     mind = 100000
+        //     minq = [0,0]
+        //     points.forEach(q=>{
+        //         d = dist(p,q)
+        //         if (d> 0 && d < mind) {
+        //             mind = d
+        //             minq = q
+        //         }
+        //     })
+
+        //     paths.push([p, minq])
+        // })
+
+        var scale = 5000
+        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
+        tx = 3000
+        ty = 3000
+        paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+
+        console.log(paths)
+        return paths
+
+
+    }
+
+}

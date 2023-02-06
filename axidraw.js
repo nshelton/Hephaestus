@@ -20,14 +20,14 @@ Axidraw = function () {
     this.connected = false;
 
     this.connect = async function () {
-        const ports = await navigator.serial.getPorts();
-        console.log(ports)
+        // const ports = await navigator.serial.getPorts();
+        // console.log(ports)
 
-        if (ports.length == 0) {
+        // if (ports.length == 0) {
             this.port = await navigator.serial.requestPort();
-        } else {
-            this.port = ports[0]
-        }
+        // } else {
+            // this.port = ports[0]
+        // }
 
         await this.port.open({ baudRate: 9600 });
         this.writer = this.port.writable.getWriter();
@@ -39,8 +39,14 @@ Axidraw = function () {
 
     this.penUp = async function (duration = 100) { return await this.writeCommand(`SP,1,${duration}`), this.writeCommand("XM,50,0,0") }
     this.penDown = async function (duration = 100) { return await this.writeCommand(`SP,0,${duration}`), this.writeCommand("XM,50,0,0") }
-    this.move = async function (x, y) { return await this.writeCommand(`XM,${Math.floor(Math.sqrt(x * x + y * y) / this.speed)},${x},${y}`) }
+    this.move = async function (x, y) { 
+        var length = Math.floor(Math.sqrt(x * x + y * y))
+        var time = length / this.speed
+        console.log("time", time, "length", length)
 
+        return await this.writeCommand(`XM,${Math.ceil(time)},${x},${y}`) 
+    
+    }
 
     this.disableMotor = async function () { return await this.writeCommand("EM,0,0") }
     this.enableMotor = async function () { return await this.writeCommand(`EM,${this.stepmode},1`) }
@@ -55,7 +61,7 @@ Axidraw = function () {
     this.writeCommand = async function (command) {
         if (!this.connected) { await this.connect(); }
 
-        // console.log(command)
+        console.log(command)
         this.commandsSent++;
         await this.writer.write(this.textEncoder.encode(command + "\r"));
         // return await this.readResult()

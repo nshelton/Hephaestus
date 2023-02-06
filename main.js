@@ -85,7 +85,7 @@ async function consumeQueue() {
     console.log("update", queue.length, plotter.commandsSent, plotter.commandsCompleted)
     if (!paused) {
 
-        if (plotter.commandsSent - plotter.commandsCompleted < 500) {
+        if (plotter.commandsSent - plotter.commandsCompleted < 100) {
             for (var i = 0; i < 100; i++) {
                 if (queue.length > 0) {
                     var next = queue.shift()
@@ -173,6 +173,11 @@ function init() {
         dragon: function () { viewer.AddPath(pathUtils.dragonPath()) },
         circle: function () { viewer.AddPath(pathUtils.circlePath(2000, 2000, 4000, 5)) },
         flowField: function () { viewer.AddPaths(pathUtils.flowField()) },
+        apollo: function () { viewer.AddPaths(pathUtils.apollonian()) },
+        mandala: function () { viewer.AddPaths(pathUtils.mandala()) },
+        sierpinski: function () { viewer.AddPaths(pathUtils.sierpinski()) },
+        voronoi: function () { viewer.AddPaths(pathUtils.voronoi()) },
+        timestamp: function () { viewer.AddPaths(pathUtils.timestamp()) },
 
     };
 
@@ -186,8 +191,12 @@ function init() {
     gui.add(guiParams, 'flowField')
     gui.add(guiParams, 'circleGrid')
     gui.add(guiParams, 'circle')
+    gui.add(guiParams, 'apollo')
+    gui.add(guiParams, 'mandala')
+    gui.add(guiParams, 'sierpinski')
+    gui.add(guiParams, 'voronoi')
 
-
+    
     app = {
         plot: function () { plotPath(viewer.createPlotList()) },
         disengage: function () {
@@ -233,11 +242,10 @@ function init() {
         if (window.localStorage.getItem("plotter_speed") != null) {
             customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
         }
-
-        // viewer.AddPaths(pathUtils.flowField())
         textstring = new Date().toLocaleString()
-        console.log(textstring)
         viewer.AddPaths(pathUtils.text(textstring))
+        // viewer.AddPaths(pathUtils.voronoi())
+ 
 
     }, "100")
 
