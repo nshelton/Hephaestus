@@ -3,6 +3,7 @@ plotter = new Axidraw()
 viewer = new PlotViewer()
 pathUtils = new PathUtils()
 customGui = new PlotterGUI()
+optomizer = new Optomizer()
 
 var queue = []
 plotterPos = [0, 0]
@@ -21,10 +22,11 @@ function moveTo(p) {
 }
 
 async function plotPath(paths) {
+    console.log( paths ) 
+    paths = optomizer.optomize(paths)
 
     paths = paths.filter(p => p.length > 0)
     paths.forEach(path => {
-
 
         moveTo(path[0])
         // queue.push(["query"])
@@ -38,39 +40,12 @@ async function plotPath(paths) {
 
     moveTo([0, 0])
 
+    //TODO: clean queue to remove the up / move 0 0 / down pattern
     console.log(queue)
 }
 
 function pause() { paused = true }
 function resume() { paused = false }
-
-// window.addEventListener("keydown", (event) => {
-
-//     if (event.isComposing || event.key === "229") {
-//         return;
-//     }
-
-//     if (event.key == "b") {
-//         var count = 0
-//         while (true) {
-//             var next = queue.shift()
-//             if (next)
-//                 switch (next[0]) {
-//                     case "move": plotter.move(next[1], next[2]); break;
-//                     case "up": plotter.penUp(); break;
-//                     case "down": plotter.penDown(); break;
-//                 }
-//             count++
-
-//             if (count > 1000 || next[0] == "up") {
-//                 break;
-//             }
-//         }
-
-//     }
-//     // do something
-// });
-
 
 async function readStatus() {
     if (plotter.commandsSent - plotter.commandsCompleted < 500) {
