@@ -564,7 +564,7 @@ PathUtils = function () {
             }
         }
                 // Create cyrb128 state:
-        var seed = this.cyrb128("happy apple");
+        var seed = this.cyrb128("big mouse");
 
         // Only one 32-bit component hash is needed for mulberry32.
         var rand = mulberry32(seed[0]);
@@ -578,24 +578,15 @@ PathUtils = function () {
             return val
         }
 
-        nPoints = 40
+        nPoints = 100
         points = []
         for(var i = 0; i < nPoints; i ++) {
             p = [gauss(), gauss()]
             points.push(p)
         }
         paths = []
-        // paths = points.map(p => this.circlePath(p[0], p[1], 0.03, 30))
+        paths = points.map(p => this.circlePath(p[0], p[1], 0.01, 30))
         
-        function dist(a,b) {
-            return Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]))
-        }
-
-        // for (var i = 0;i < points.length; i++) {
-        //     for (var j = 0;j < points.length; j++) {
-
-        // }
-
         bbox= {xl:-1,xr:1,yt:-1,yb:1}
         voronoi = new Voronoi()
         sites = points.map(p => {return {x:p[0], y:p[1]}})
@@ -605,24 +596,8 @@ PathUtils = function () {
            paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
         });
 
-        console.log(diagram)
 
-        // var inSet = []
-
-        // points.forEach(p => {
-        //     mind = 100000
-        //     minq = [0,0]
-        //     points.forEach(q=>{
-        //         d = dist(p,q)
-        //         if (d> 0 && d < mind) {
-        //             mind = d
-        //             minq = q
-        //         }
-        //     })
-
-        //     paths.push([p, minq])
-        // })
-
+        
         var scale = 5000
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         tx = 3000

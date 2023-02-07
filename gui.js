@@ -26,13 +26,15 @@ PlotterGUI = function() {
 
         function makeButton(text, x, y, onclick) {
             theButton = document.createElement("div")
-            theButton.style.backgroundColor = "#bbbbbb"
+            theButton.style.backgroundColor = "#000000"
             theButton.style.height = "30px"
+            theButton.style.padding = "5px"
+            theButton.style.color = "#8888ee"
             theButton.style.textAlign = "center"
             theButton.style.position = "absolute"
             theButton.style.left = x
             theButton.style.bottom = y
-            // theButton.style.border = "1px solid black"
+            theButton.style.border = "1px solid white"
             theButton.onclick = onclick
             theButton.innerText = text
             theButton.style.width = "100px"

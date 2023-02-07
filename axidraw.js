@@ -41,6 +41,8 @@ Axidraw = function () {
     this.penDown = async function (duration = 100) { return await this.writeCommand(`SP,0,${duration}`), this.writeCommand("XM,50,0,0") }
     this.move = async function (x, y) { 
         var length = Math.floor(Math.sqrt(x * x + y * y))
+        if(length == 0 )
+            return; 
         var time = length / this.speed
         console.log("time", time, "length", length)
 

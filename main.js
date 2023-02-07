@@ -242,16 +242,13 @@ function init() {
         if (window.localStorage.getItem("plotter_speed") != null) {
             customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
         }
-        textstring = new Date().toLocaleString()
-        viewer.AddPaths(pathUtils.text(textstring))
-        // viewer.AddPaths(pathUtils.voronoi())
+        // textstring = new Date().toLocaleString()
+    //    viewer.AddPaths(pathUtils.text(textstring))
+
+        viewer.AddPaths(pathUtils.voronoi())
  
 
     }, "100")
-
-
-
-
 
 
     // setTimeout(() => {
