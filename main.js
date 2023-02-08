@@ -4,6 +4,7 @@ viewer = new PlotViewer()
 pathUtils = new PathUtils()
 customGui = new PlotterGUI()
 optomizer = new Optomizer()
+imageUtils = new imageUtils()
 
 var queue = []
 plotterPos = [0, 0]
@@ -22,8 +23,8 @@ function moveTo(p) {
 }
 
 async function plotPath(paths) {
-    console.log( paths ) 
-    paths = optomizer.optomize(paths)
+    console.log(paths)
+    // paths = optomizer.optomize(paths)
 
     paths = paths.filter(p => p.length > 0)
     paths.forEach(path => {
@@ -103,7 +104,8 @@ function loadImage(file) {
 
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
         var pix = imgd.data;
-        console.log(pix)
+
+        viewer.AddPaths(imageUtils.trageImage(pix, data.width, data.height))
 
     })
 
@@ -171,7 +173,7 @@ function init() {
     gui.add(guiParams, 'sierpinski')
     gui.add(guiParams, 'voronoi')
 
-    
+
     app = {
         plot: function () { plotPath(viewer.createPlotList()) },
         disengage: function () {
@@ -217,10 +219,10 @@ function init() {
         if (window.localStorage.getItem("plotter_speed") != null) {
             customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
         }
-        // textstring = new Date().toLocaleString()
-    //    viewer.AddPaths(pathUtils.text(textstring))
+        textstring = new Date().toLocaleString()
+        viewer.AddPaths(pathUtils.text(textstring))
 
-        viewer.AddPaths(pathUtils.voronoi())
+        // viewer.AddPaths(pathUtils.voronoi())
  
 
     }, "100")

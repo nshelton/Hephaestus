@@ -9,8 +9,6 @@ PathUtils = function () {
         }
         //close loop
         points.push(points[0])
-
-        console.log(points)
         return points
     }
 
@@ -553,26 +551,25 @@ PathUtils = function () {
         return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
     }
 
-    this.voronoi  = function () {
 
-        function mulberry32(a) {
-            return function() {
-              var t = a += 0x6D2B79F5;
-              t = Math.imul(t ^ t >>> 15, t | 1);
-              t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-              return ((t ^ t >>> 14) >>> 0) / 4294967296;
-            }
+    this.mulberry32 = function(a) {
+        return function() {
+          var t = a += 0x6D2B79F5;
+          t = Math.imul(t ^ t >>> 15, t | 1);
+          t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
         }
-                // Create cyrb128 state:
-        var seed = this.cyrb128("big mouse");
+    }
 
-        // Only one 32-bit component hash is needed for mulberry32.
-        var rand = mulberry32(seed[0]);
+    // Only one 32-bit component hash is needed for mulberry32.
+    this.rand = function() {return this.mulberry32(this.cyrb128("mouse")[0])};
 
+    this.voronoi  = function () {
+        const rand = this.rand()
         function gauss() {
             let sigma = 2
             let val = 1
-            for (var i = 0;i < sigma; i ++) {
+            for (var i = 0; i < sigma; i ++) {
                 val *= 2.0 * (rand() - 0.5)
             }
             return val
@@ -596,8 +593,6 @@ PathUtils = function () {
            paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
         });
 
-
-        
         var scale = 5000
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         tx = 3000
