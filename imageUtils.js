@@ -20,24 +20,24 @@ imageUtils = function () {
     this.dither = function (bitmap, w, h) {
 
         function shuffle(array) {
-            let currentIndex = array.length,  randomIndex;
-          
+            let currentIndex = array.length, randomIndex;
+
             // While there remain elements to shuffle.
             while (currentIndex != 0) {
-          
-              // Pick a remaining element.
-              randomIndex = Math.floor(Math.random() * currentIndex);
-              currentIndex--;
-          
-              // And swap it with the current element.
-              [array[currentIndex], array[randomIndex]] = [
-                array[randomIndex], array[currentIndex]];
-            }
-          
-            return array;
-          }
 
-          
+                // Pick a remaining element.
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+
+                // And swap it with the current element.
+                [array[currentIndex], array[randomIndex]] = [
+                    array[randomIndex], array[currentIndex]];
+            }
+
+            return array;
+        }
+
+
         grayscale = []
         if (grayscale.length % 4 != 0) {
             alert("invalid image")
@@ -59,27 +59,35 @@ imageUtils = function () {
 
         nPoints = 10000
 
-        while(points.length < nPoints){
+        while (points.length < nPoints) {
             var x = Math.random() * w
             var y = Math.random() * h
-           
-            var brightness = getPixel([x,y])/255
-            if (Math.random() >= brightness ) {
+
+            var brightness = getPixel([x, y]) / 255
+            if (Math.random() >= brightness) {
                 points.push([x, y]);
             }
         }
-        const xStep = 16
-        const yStep = 16
-
-        for(var i = xStep / 2; i < width; i+=xStep){
-            for(var j = yStep / 2; j < width; j+=yStep){
-                regular.push([i, j]);
+        const step = 64
+        for (var i = step / 2; i < w; i += step) {
+            for (var j = step / 2; j < h; j += step) {
+                // regular.push([i, j]);
+                regular.push([i + Math.random() * step, j + Math.random() * step]);
             }
         }
-        
-        var rejectionSites = sites.slice();
-        originalRejection = sites.slice();
 
+        voronoi = new Voronoi()
+        sites = regular.map(p => { return { x: p[0], y: p[1] } })
+        bbox = { xl: 0, xr: w + step, yt: 0, yb: h + step }
+        diagram = voronoi.compute(sites, bbox);
+
+        // var rejectionSites = sites.slice();
+        // originalRejection = sites.slice();
+
+
+        // diagram.edges.forEach(edge => {
+        //     paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
+        // });
 
         // for (var x = 0; x < w; x ++ ) {
         //     for (var y = 0; y < h; y ++ ) {
@@ -122,16 +130,85 @@ imageUtils = function () {
         // for (var i = 0; i < 20; i++) {
         //     points = relax(points)
         // }
+        function onlyUnique(value, index, array) {
+            return array.findIndex(v => v.x == value.x && v.y == value.y) === index;
+        }
 
-        paths = points.map(p => pathUtils.circlePath(p[0], p[1], 0.5, 10))
+        paths = []
 
+        function get_polygon_centroid(pts) {
+            var first = pts[0], last = pts[pts.length - 1];
+            if (first.x != last.x || first.y != last.y) pts.push(first);
+            var twicearea = 0,
+                x = 0, y = 0,
+                nPts = pts.length,
+                p1, p2, f;
+            for (var i = 0, j = nPts - 1; i < nPts; j = i++) {
+                p1 = pts[i]; p2 = pts[j];
+                f = (p1.y - first.y) * (p2.x - first.x) - (p2.y - first.y) * (p1.x - first.x);
+                twicearea += f;
+                x += (p1.x + p2.x - 2 * first.x) * f;
+                y += (p1.y + p2.y - 2 * first.y) * f;
+            }
+            f = twicearea * 3;
+            return [x / f + first.x, y / f + first.y];
+        }
+
+        function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t } }
+        function mul(a, b) { return { x: a.x * b, y: a.y * b } }
+        function add(a, b) { return { x: a.x + b.x, y: a.y + b.y } }
+        function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t } }
+
+        function getAngle(a, b) {
+            const l = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
+            return Math.atan2((a.x - b.x), (a.y - b.y)) + Math.PI
+        }
+
+        function getOutline(cell) {
+            verts = cell.halfedges.map(he => [he.edge.va, he.edge.vb]).flat(2)
+            verts = verts.filter(onlyUnique);
+            center = verts.reduce(add, { x: 0, y: 0 })
+            center = mul(center, 1 / verts.length)
+            pointsAndAngles = verts.map(p => { return { point: p, angle: getAngle(p, center) } })
+            sorted = pointsAndAngles.sort((a, b) => a.angle - b.angle).map(e => e.point)
+            sorted.push(sorted[0])
+            sorted = sorted.map(p => lerp(p, center, 0.2))
+            return sorted
+        }
+
+        paths = paths.concat(
+            diagram.cells.map(cell => {
+                return getOutline(cell).map(p => [p.x, p.y])
+            })
+        )
+
+        // centroids = paths.concat(diagram.cells.map(cell => {
+
+        //     return get_polygon_centroid(outline)
+        // }));
+
+        // diagram.cells.map(cell => {
+        //     outline = getOutline(cell)
+        //     paths.push(outline)
+        // })
+
+        console.log(paths)
+
+        console.log("NANs???", verts.flat().reduce(add, { x: 0, y: 0 }))
+
+        paths.each
+
+        // paths = paths.concat(centroids.map(p => pathUtils.circlePath(p[0], p[1], 4, 5)))
+
+        // console.log(paths)
+
+        // paths = paths.concat(regular.map(p => pathUtils.circlePath(p[0], p[1], 0.5, 10)))
 
         var scale = 50
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         // tx = 3000
         // ty = 3000
         // paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
-        console.log(paths)
         return paths
     }
 

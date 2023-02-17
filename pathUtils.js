@@ -21,6 +21,13 @@ PathUtils = function () {
             [x + 0, y + 0]]
     }
 
+    // this.crossPath = function (x, y, w) {
+    //     return [
+    //         [x + w, y + 0],
+    //         [x - w, y + 0],
+    //         [x + 0, y - w],
+    //         [x + 0, y + w]]
+    // }
 
     this.dragonPath = function () {
         var n = 13
@@ -38,7 +45,7 @@ PathUtils = function () {
             if (c1 > 0) { y += c2y } else { x += c2x }
             i++; c += i / (i & -i);
         }
-
+        console.log(path)
         return (path)
     }
 

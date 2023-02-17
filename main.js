@@ -222,6 +222,7 @@ function init() {
         textstring = new Date().toLocaleString()
         viewer.AddPaths(pathUtils.text(textstring))
 
+
         // viewer.AddPaths(pathUtils.voronoi())
  
 
