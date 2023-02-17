@@ -105,7 +105,7 @@ function loadImage(file) {
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
         var pix = imgd.data;
 
-        viewer.AddPaths(imageUtils.trageImage(pix, data.width, data.height))
+        viewer.AddPaths(imageUtils.dither(pix, data.width, data.height))
 
     })
 
