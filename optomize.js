@@ -15,6 +15,7 @@ Optomizer = function () {
         }
 
         paths.forEach(path => {
+
             moveTo(path[0])
             for (var i = 1; i < path.length; i++) {
                 moveTo(path[i])
@@ -27,9 +28,12 @@ Optomizer = function () {
 
     this.optomize = function (paths) {
 
+        paths = paths.filter( p => p.length > 0)
+
         score = this.getScore(paths)
         console.log(score)
 
+        
         picked = paths.map( p => 0)
 
         reorderedPaths = [paths[0]]

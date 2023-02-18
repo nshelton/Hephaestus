@@ -69,33 +69,19 @@ PlotViewer = function () {
             return Math.max(0, x)
         }
 
-        const bbgeometry = new THREE.BoxGeometry(1, 1, 1);
-        const bbmaterial =
-            transformed = []
-
-        var totalVerts = 0
-        this.lineObjects.forEach(line => {
-            totalVerts += line.geometry.attributes.position.count
-        })
-
-        var ii = 0
+        transformed = []
 
         this.lineObjects.forEach(line => {
             var posBuffer = line.geometry.attributes.position.clone()
             // console.log(this.boundingBox.matrix)
             posBuffer.applyMatrix4(this.boundingBox.matrix)
-            // console.log(posBuffer)
 
             coords = []
 
             for (var i = 0; i < posBuffer.count; i++) {
                 const x = clipBounds(posBuffer.array[i * 3 + 0])
                 const y = clipBounds(posBuffer.array[i * 3 + 1])
-                var debugBox = new THREE.Mesh(bbgeometry, new THREE.MeshBasicMaterial({ color: this.getGradient(ii / totalVerts), wireframe: true }));
-                debugBox.position.set(x, y, 0)
-                this.scene.add(debugBox)
                 coords.push([x * 100, y * 100])
-                ii++
             }
             transformed.push(coords)
         })
@@ -105,18 +91,18 @@ PlotViewer = function () {
     const a3Width = 297
     const a3Height = 420
 
-    this.addDragNDrop = function (node, reScale=false) {
+    this.addDragNDrop = function (node, reScale = false) {
         var bbox = new THREE.Box3().setFromObject(node);
 
         const bbgeometry = new THREE.BoxGeometry(1, 1, 1);
-        const bbmaterial = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true, transparent: true, opacity: 0.5 });
+        const bbmaterial = new THREE.MeshBasicMaterial({ color: 0x88ff88, wireframe: true, transparent: true, opacity: 0.1 });
 
         this.boundingBox = new THREE.Mesh(bbgeometry, bbmaterial);
         this.boundingBox.renderOrder = -1
 
 
         var bbox = new THREE.Box3().setFromObject(node);
-        
+
         bbox.getCenter(this.boundingBox.position)
         bbox.getSize(this.boundingBox.scale)
         this.originalScale = this.boundingBox.scale.clone()
@@ -179,13 +165,13 @@ PlotViewer = function () {
             const points = path.map(s => new THREE.Vector3(s[0] / 100, s[1] / 100, 0))
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, material);
-    
-    
+
+
             this.lineObjects.push(line)
             this.container.add(line);
             this.segments.push(points)
         })
-    
+
         this.scene.add(this.container)
         this.addDragNDrop(this.container)
     }

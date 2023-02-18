@@ -1,4 +1,3 @@
-
 imageUtils = function () {
 
     pathUtils = new PathUtils()
@@ -9,7 +8,6 @@ imageUtils = function () {
             for (var y = 0; y < h; y++) {
                 if (grayscale[x + y * w] < 100) {
                     paths.push([[x, y], [x, y + 1]])
-
                 }
             }
         }
@@ -18,6 +16,42 @@ imageUtils = function () {
 
 
     this.dither = function (bitmap, w, h) {
+        function getCentroid(cell) {
+            const pts = getOutline(cell)
+            var first = pts[0], last = pts[pts.length - 1];
+            if (first.x != last.x || first.y != last.y) pts.push(first);
+            var twicearea = 0, x = 0, y = 0, nPts = pts.length, p1, p2, f;
+            for (var i = 0, j = nPts - 1; i < nPts; j = i++) {
+                p1 = pts[i]; p2 = pts[j];
+                f = (p1.y - first.y) * (p2.x - first.x) - (p2.y - first.y) * (p1.x - first.x);
+                twicearea += f;
+                x += (p1.x + p2.x - 2 * first.x) * f;
+                y += (p1.y + p2.y - 2 * first.y) * f;
+            }
+            f = twicearea * 3;
+            return { x: x / f + first.x, y: y / f + first.y };
+        }
+
+        function uniquePoints(value, index, array) { return array.findIndex(v => v.x == value.x && v.y == value.y) === index; }
+        function mul(a, b) { return { x: a.x * b, y: a.y * b } }
+        function add(a, b) { return { x: a.x + b.x, y: a.y + b.y } }
+        function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t } }
+        function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y } }
+        function length(a) { return Math.sqrt(a.x * a.x + a.y * a.y) }
+        function sqDistance(a, b) { return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) }
+        function getAngle(a, b) { return Math.atan2((a.x - b.x), (a.y - b.y)) }
+
+        function getOutline(cell) {
+            verts = cell.halfedges.map(he => [he.edge.va, he.edge.vb]).flat(2)
+            verts = verts.filter(uniquePoints);
+            center = verts.reduce(add, { x: 0, y: 0 })
+            center = mul(center, 1 / verts.length)
+            pointsAndAngles = verts.map(p => { return { point: p, angle: getAngle(p, center) } })
+            sorted = pointsAndAngles.sort((a, b) => a.angle - b.angle).map(e => e.point)
+            sorted.push(sorted[0])
+            // sorted = sorted.map(p => lerp(p, center, 0.2))
+            return sorted
+        }
 
         function shuffle(array) {
             let currentIndex = array.length, randomIndex;
@@ -43,6 +77,7 @@ imageUtils = function () {
             alert("invalid image")
             return
         }
+
         for (var i = 0; i < bitmap.length; i += 4) {
 
             val = bitmap[i] + bitmap[i + 1] + bitmap[i + 2]
@@ -55,9 +90,7 @@ imageUtils = function () {
         }
 
         points = []
-        regular = []
-
-        nPoints = 10000
+        const nPoints = 10000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -65,145 +98,113 @@ imageUtils = function () {
 
             var brightness = getPixel([x, y]) / 255
             if (Math.random() >= brightness) {
-                points.push([x, y]);
-            }
-        }
-        const step = 64
-        for (var i = step / 2; i < w; i += step) {
-            for (var j = step / 2; j < h; j += step) {
-                // regular.push([i, j]);
-                regular.push([i + Math.random() * step, j + Math.random() * step]);
+                points.push({ x: x, y: y });
             }
         }
 
-        voronoi = new Voronoi()
-        sites = regular.map(p => { return { x: p[0], y: p[1] } })
-        bbox = { xl: 0, xr: w + step, yt: 0, yb: h + step }
-        diagram = voronoi.compute(sites, bbox);
+        function getBbox(pts) {
+            pad = 10
+            minX = 1e10
+            maxX = -1e10
+            minY = 1e10
+            maxY = -1e10
 
-        // var rejectionSites = sites.slice();
-        // originalRejection = sites.slice();
+            pts.forEach(p => {
+                minX = Math.min(p.x, minX)
+                maxX = Math.max(p.x, maxX)
+                minY = Math.min(p.y, minY)
+                maxY = Math.max(p.y, maxY)
+            })
 
+            return { xl: minX - pad, xr: maxX + pad, yt: minY - pad, yb: maxY + pad }
 
-        // diagram.edges.forEach(edge => {
-        //     paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
-        // });
-
-        // for (var x = 0; x < w; x ++ ) {
-        //     for (var y = 0; y < h; y ++ ) {
-        //         if (getPixel([x,y]) < Math.random() * 256) {
-        //             points.push([x, y])
-        //         }
-        //     }
-        // }
-
-        // points = shuffle(points)
-        // points = points.slice(0, nPoints)
-
-        // function dist(a, b) {
-        //     return Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]))
-        // }
-
-        // function dir(a, b) {
-        //     d = dist(a, b)
-        //     return [(a[0] - b[0]) / d, (a[1] - b[1]) / d]
-        // }
-
-        // function relax(points) {
-        //     for (var i = 0; i < nPoints; i++) {
-        //         for (var j = 0; j < nPoints; j++) {
-        //             if (i != j) {
-        //                 d = dist(points[i], points[j])
-        //                 thresh = getPixel(points[i])
-        //                 repulsion = thresh 
-        //                 if (d < thresh) {
-        //                     n = dir(points[i], points[j]) 
-        //                     points[j][0] -= n[0] / (0.001 + d )
-        //                     points[j][1] -= n[1] / (0.001 + d )
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     return points
-        // }
-
-        // for (var i = 0; i < 20; i++) {
-        //     points = relax(points)
-        // }
-        function onlyUnique(value, index, array) {
-            return array.findIndex(v => v.x == value.x && v.y == value.y) === index;
         }
 
         paths = []
 
-        function get_polygon_centroid(pts) {
-            var first = pts[0], last = pts[pts.length - 1];
-            if (first.x != last.x || first.y != last.y) pts.push(first);
-            var twicearea = 0,
-                x = 0, y = 0,
-                nPts = pts.length,
-                p1, p2, f;
-            for (var i = 0, j = nPts - 1; i < nPts; j = i++) {
-                p1 = pts[i]; p2 = pts[j];
-                f = (p1.y - first.y) * (p2.x - first.x) - (p2.y - first.y) * (p1.x - first.x);
-                twicearea += f;
-                x += (p1.x + p2.x - 2 * first.x) * f;
-                y += (p1.y + p2.y - 2 * first.y) * f;
+        function getWeightedCentroids(points) {
+            var tree = new kdTree(points, sqDistance, ["x", "y"]);
+
+            weightedSums = points.map(p => ({ x: p.x, y: p.y }))
+            numPixels = points.map(p => 1)
+
+            for (var x = 0; x < w; x++) {
+                for (var y = 0; y < h; y++) {
+
+                    const brightness = 255 - grayscale[x + y * w]
+                    point = { x: x + 0.5, y: y + 0.5 }
+                    const near = tree.nearest(point, 1)[0][0]
+
+                    const idx = points.findIndex(p => {
+                        return p.x == near.x && p.y == near.y
+                    })
+
+                    weightedSums[idx] = add(weightedSums[idx], mul(point, brightness))
+                    // weightedSums[idx] = add(weightedSums[idx], point)
+                    numPixels[idx] += brightness
+                }
             }
-            f = twicearea * 3;
-            return [x / f + first.x, y / f + first.y];
+            return weightedSums.map((e, i) => mul(e, 1 / numPixels[i]))
         }
 
-        function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t } }
-        function mul(a, b) { return { x: a.x * b, y: a.y * b } }
-        function add(a, b) { return { x: a.x + b.x, y: a.y + b.y } }
-        function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t } }
+        // // Relax the diagram by moving points to the weighted centroid.
+        // // Wiggle the points a little bit so they don’t get stuck.
+        // const w = Math.pow(k + 1, -0.8) * 10;
+        // for (let i = 0; i < n; ++i) {
+        //     const x0 = points[i * 2], y0 = points[i * 2 + 1];
+        //     const x1 = s[i] ? c[i * 2] / s[i] : x0, y1 = s[i] ? c[i * 2 + 1] / s[i] : y0;
+        //     points[i * 2] = x0 + (x1 - x0) * 1.8 + (Math.random() - 0.5) * w;
+        //     points[i * 2 + 1] = y0 + (y1 - y0) * 1.8 + (Math.random() - 0.5) * w;
+        // }
 
-        function getAngle(a, b) {
-            const l = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
-            return Math.atan2((a.x - b.x), (a.y - b.y)) + Math.PI
+
+        // relax
+        const iterations = 12
+        for (var ii = 0; ii < iterations; ii++) {
+            console.log(ii)
+            voronoi = new Voronoi()
+            bbox = getBbox(points)
+            diagram = voronoi.compute(points, bbox);
+
+            points = diagram.cells.map((cell) => ({ x: cell.site.x, y: cell.site.y }))
+
+            centroids = getWeightedCentroids(points);
+
+            // centroids = diagram.cells.map(cell => getCentroid(cell));
+
+            for (var j = 0; j < points.length; j++) {
+                dir = sub(centroids[j], points[j])
+                const l = length(dir)
+
+                dir = mul(dir, 1 / (l + 0.0001))
+                dir = mul(dir, 0.1)
+                points[j] = add(points[j], dir)
+                // points[j] = add(points[j], { x: Math.random(), y: Math.random() })
+            }
+
         }
 
-        function getOutline(cell) {
-            verts = cell.halfedges.map(he => [he.edge.va, he.edge.vb]).flat(2)
-            verts = verts.filter(onlyUnique);
-            center = verts.reduce(add, { x: 0, y: 0 })
-            center = mul(center, 1 / verts.length)
-            pointsAndAngles = verts.map(p => { return { point: p, angle: getAngle(p, center) } })
-            sorted = pointsAndAngles.sort((a, b) => a.angle - b.angle).map(e => e.point)
-            sorted.push(sorted[0])
-            sorted = sorted.map(p => lerp(p, center, 0.2))
-            return sorted
-        }
+        // paths = paths.concat(
+        //     diagram.cells.map(cell => {
+        //         return getOutline(cell).map(p => [p.x, p.y])
+        //     })
+        // )
+        console.log(points, centroids)
+        paths = paths.concat(points.map(p => {
+            var s = 1 - getPixel([p.x, p.y]) / 255 + 0.001
+            if (isNaN(s)) {
+                s = 0.01
+            }
 
-        paths = paths.concat(
-            diagram.cells.map(cell => {
-                return getOutline(cell).map(p => [p.x, p.y])
-            })
-        )
+            return pathUtils.circlePath(p.x, p.y, s/2, 6)
 
-        // centroids = paths.concat(diagram.cells.map(cell => {
+        }))
 
-        //     return get_polygon_centroid(outline)
-        // }));
+        // console.log(paths.flat().reduce((a, b) => (a + b), 0))
 
-        // diagram.cells.map(cell => {
-        //     outline = getOutline(cell)
-        //     paths.push(outline)
-        // })
 
-        console.log(paths)
-
-        console.log("NANs???", verts.flat().reduce(add, { x: 0, y: 0 }))
-
-        paths.each
-
-        // paths = paths.concat(centroids.map(p => pathUtils.circlePath(p[0], p[1], 4, 5)))
-
-        // console.log(paths)
-
-        // paths = paths.concat(regular.map(p => pathUtils.circlePath(p[0], p[1], 0.5, 10)))
-
+        // paths = paths.concat(points.map(p => pathUtils.circlePath(p.x, p.y, 0.2, 10)))
+        /////Transform output
         var scale = 50
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         // tx = 3000

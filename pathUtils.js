@@ -21,13 +21,10 @@ PathUtils = function () {
             [x + 0, y + 0]]
     }
 
-    // this.crossPath = function (x, y, w) {
-    //     return [
-    //         [x + w, y + 0],
-    //         [x - w, y + 0],
-    //         [x + 0, y - w],
-    //         [x + 0, y + w]]
-    // }
+    this.transform = function (paths, scale, tx, ty) {
+        return paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
+            .map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+    }
 
     this.dragonPath = function () {
         var n = 13

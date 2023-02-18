@@ -24,7 +24,7 @@ function moveTo(p) {
 
 async function plotPath(paths) {
     console.log(paths)
-    // paths = optomizer.optomize(paths)
+    paths = optomizer.optomize(paths)
 
     paths = paths.filter(p => p.length > 0)
     paths.forEach(path => {
@@ -220,7 +220,7 @@ function init() {
             customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
         }
         textstring = new Date().toLocaleString()
-        viewer.AddPaths(pathUtils.text(textstring))
+        viewer.AddPaths(pathUtils.transform(pathUtils.text(textstring), 2, 0, 500))
 
 
         // viewer.AddPaths(pathUtils.voronoi())

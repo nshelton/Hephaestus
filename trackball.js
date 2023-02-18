@@ -230,7 +230,7 @@ THREE.InteractiveControls = function (camera, domElement) {
 
         }
 
-        _this.zoom *= (1 - 0.05 * delta) 
+        _this.zoom *= (1 - 0.05 * delta)
         _this.zoom = Math.min(_this.zoom, 1000000)
         _this.zoom = Math.max(_this.zoom, 50)
         _this.updateCamera()
