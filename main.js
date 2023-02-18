@@ -10,9 +10,15 @@ var queue = []
 plotterPos = [0, 0]
 paused = false
 
-function goHome() {
+currentPlotObjects = []
 
+function createPlot(paths) {
+    currentPlotObjects.push(paths)
+    viewer.CreatePaths(paths)
+}
 
+function plotCurrent() {
+    plotPath(viewer.createPlotList())
 }
 
 function moveTo(p) {
@@ -23,6 +29,7 @@ function moveTo(p) {
 }
 
 async function plotPath(paths) {
+
     console.log(paths)
     paths = optomizer.optomize(paths)
 
@@ -30,13 +37,11 @@ async function plotPath(paths) {
     paths.forEach(path => {
 
         moveTo(path[0])
-        // queue.push(["query"])
         queue.push(["down"])
         for (var i = 1; i < path.length; i++) {
             moveTo(path[i])
         }
         queue.push(["up"])
-        // queue.push(["query"])
     })
 
     moveTo([0, 0])
@@ -105,7 +110,7 @@ function loadImage(file) {
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
         var pix = imgd.data;
 
-        viewer.AddPaths(imageUtils.dither(pix, data.width, data.height))
+        createPlot(imageUtils.dither(pix, data.width, data.height))
 
     })
 
@@ -144,17 +149,17 @@ function dragOverHandler(ev) { ev.preventDefault(); }
 function init() {
     var guiParams = {
 
-        grid: function () { viewer.AddPaths(pathUtils.gridTest()) },
-        rect: function () { viewer.AddPath(pathUtils.rectPath(100, 100, 1000, 1000)) },
-        circleGrid: function () { viewer.AddPaths(pathUtils.circleGrid()) },
-        dragon: function () { viewer.AddPath(pathUtils.dragonPath()) },
-        circle: function () { viewer.AddPath(pathUtils.circlePath(2000, 2000, 4000, 5)) },
-        flowField: function () { viewer.AddPaths(pathUtils.flowField()) },
-        apollo: function () { viewer.AddPaths(pathUtils.apollonian()) },
-        mandala: function () { viewer.AddPaths(pathUtils.mandala()) },
-        sierpinski: function () { viewer.AddPaths(pathUtils.sierpinski()) },
-        voronoi: function () { viewer.AddPaths(pathUtils.voronoi()) },
-        timestamp: function () { viewer.AddPaths(pathUtils.timestamp()) },
+        grid: function () { createPlot(pathUtils.gridTest()) },
+        rect: function () { createPlot([pathUtils.rectPath(100, 100, 1000, 1000)]) },
+        circleGrid: function () { createPlot(pathUtils.circleGrid()) },
+        dragon: function () { createPlot([pathUtils.dragonPath()]) },
+        circle: function () { createPlot([pathUtils.circlePath(2000, 2000, 4000, 5)]) },
+        flowField: function () { createPlot(pathUtils.flowField()) },
+        apollo: function () { createPlot(pathUtils.apollonian()) },
+        mandala: function () { createPlot(pathUtils.mandala()) },
+        sierpinski: function () { createPlot(pathUtils.sierpinski()) },
+        voronoi: function () { createPlot(pathUtils.voronoi()) },
+        timestamp: function () { createPlot(pathUtils.timestamp()) },
 
     };
 
@@ -173,9 +178,8 @@ function init() {
     gui.add(guiParams, 'sierpinski')
     gui.add(guiParams, 'voronoi')
 
-
     app = {
-        plot: function () { plotPath(viewer.createPlotList()) },
+        plot: plotCurrent,
         disengage: function () {
             plotter.penUp();
             plotter.close();
@@ -185,13 +189,13 @@ function init() {
         pause: function () { paused = !paused },
 
         setPenUpValue: function (val) {
-            console.log("setPenUpValue", val)
-            plotter.setPenUp(Math.round(val));
+            if (plotter.connected)
+                plotter.setPenUp(Math.round(val));
             saveSettings("upPosition", val)
         },
         setPenDownValue: function (val) {
-            console.log("setPenDownValue", val)
-            plotter.setPenDown(Math.round(val));
+            if (plotter.connected)
+                plotter.setPenDown(Math.round(val));
             saveSettings("downPosition", val)
         },
         setSpeedValue: function (val) {
@@ -207,7 +211,7 @@ function init() {
 
     consumeQueue()
     readStatus()
-    plotter.connect()
+    // plotter.connect()
 
     setTimeout(() => {
         if (window.localStorage.getItem("plotter_upPosition") != null) {
@@ -219,19 +223,20 @@ function init() {
         if (window.localStorage.getItem("plotter_speed") != null) {
             customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
         }
+
         textstring = new Date().toLocaleString()
-        viewer.AddPaths(pathUtils.transform(pathUtils.text(textstring), 2, 0, 500))
+        var textPath = pathUtils.text(textstring)
+        var textPath = pathUtils.transform(textPath, 1, 500, 1000)
+        createPlot(textPath)
 
-
-        // viewer.AddPaths(pathUtils.voronoi())
- 
+        // createPlot(pathUtils.voronoi())
 
     }, "100")
 
 
     // setTimeout(() => {
     //     // viewer.AddPath(pathUtils.circlePath(3000, 3000, 4000, 100))
-    //     viewer.AddPaths(pathUtils.flowField())
+    //     createPlot(pathUtils.flowField())
 
     //     // list = viewer.createPlotList()
     //     // console.log(list)

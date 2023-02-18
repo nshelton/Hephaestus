@@ -24,6 +24,7 @@ PathUtils = function () {
     this.transform = function (paths, scale, tx, ty) {
         return paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
             .map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+        return paths
     }
 
     this.dragonPath = function () {

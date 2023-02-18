@@ -41,7 +41,7 @@ imageUtils = function () {
         function sqDistance(a, b) { return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) }
         function getAngle(a, b) { return Math.atan2((a.x - b.x), (a.y - b.y)) }
 
-        function getOutline(cell) {
+        function getOutline(cell, inset = 0) {
             verts = cell.halfedges.map(he => [he.edge.va, he.edge.vb]).flat(2)
             verts = verts.filter(uniquePoints);
             center = verts.reduce(add, { x: 0, y: 0 })
@@ -49,7 +49,9 @@ imageUtils = function () {
             pointsAndAngles = verts.map(p => { return { point: p, angle: getAngle(p, center) } })
             sorted = pointsAndAngles.sort((a, b) => a.angle - b.angle).map(e => e.point)
             sorted.push(sorted[0])
-            // sorted = sorted.map(p => lerp(p, center, 0.2))
+            if (inset > 0) {
+                sorted = sorted.map(p => lerp(p, center, inset))
+            }
             return sorted
         }
 
@@ -78,9 +80,30 @@ imageUtils = function () {
             return
         }
 
+        function rbg2cmyk(r, g, b) {
+            /* calculate complementary colors */
+            c = 255 - r;
+            m = 255 - g;
+            y = 255 - b;
+            /* find the black level k */
+            K = minimum(c, m, y)
+            /* correct complementary color lever based on k */
+            C = c - K
+            M = m - K
+            Y = y - K
+
+            return [c,m,y,K]
+        }
+
         for (var i = 0; i < bitmap.length; i += 4) {
 
             val = bitmap[i] + bitmap[i + 1] + bitmap[i + 2]
+
+            cmyk = rbg2cmyk(bitmap[i], bitmap[i + 1], bitmap[i + 2])
+            // specific channels
+            val = bitmap[i + 0] * 3
+
+            // alpha ? 
             val *= bitmap[i + 3] / 255
             grayscale.push(val / 3)
         }
@@ -90,7 +113,7 @@ imageUtils = function () {
         }
 
         points = []
-        const nPoints = 10000
+        const nPoints = 1000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -128,6 +151,7 @@ imageUtils = function () {
             weightedSums = points.map(p => ({ x: p.x, y: p.y }))
             numPixels = points.map(p => 1)
 
+            var lastIdx = 0
             for (var x = 0; x < w; x++) {
                 for (var y = 0; y < h; y++) {
 
@@ -135,9 +159,14 @@ imageUtils = function () {
                     point = { x: x + 0.5, y: y + 0.5 }
                     const near = tree.nearest(point, 1)[0][0]
 
-                    const idx = points.findIndex(p => {
-                        return p.x == near.x && p.y == near.y
-                    })
+                    var idx = lastIdx
+                    if (!(points[lastIdx].x == near.x && points[lastIdx].y == near.y)) {
+                        idx = lastIdx
+                    } else {
+                        const idx = points.findIndex(p => {
+                            return p.x == near.x && p.y == near.y
+                        })
+                    }
 
                     weightedSums[idx] = add(weightedSums[idx], mul(point, brightness))
                     // weightedSums[idx] = add(weightedSums[idx], point)
@@ -147,69 +176,66 @@ imageUtils = function () {
             return weightedSums.map((e, i) => mul(e, 1 / numPixels[i]))
         }
 
-        // // Relax the diagram by moving points to the weighted centroid.
-        // // Wiggle the points a little bit so they don’t get stuck.
-        // const w = Math.pow(k + 1, -0.8) * 10;
-        // for (let i = 0; i < n; ++i) {
-        //     const x0 = points[i * 2], y0 = points[i * 2 + 1];
-        //     const x1 = s[i] ? c[i * 2] / s[i] : x0, y1 = s[i] ? c[i * 2 + 1] / s[i] : y0;
-        //     points[i * 2] = x0 + (x1 - x0) * 1.8 + (Math.random() - 0.5) * w;
-        //     points[i * 2 + 1] = y0 + (y1 - y0) * 1.8 + (Math.random() - 0.5) * w;
-        // }
-
-
+        voronoi = new Voronoi()
         // relax
-        const iterations = 12
+        const iterations = 20
         for (var ii = 0; ii < iterations; ii++) {
             console.log(ii)
-            voronoi = new Voronoi()
             bbox = getBbox(points)
-            diagram = voronoi.compute(points, bbox);
-
-            points = diagram.cells.map((cell) => ({ x: cell.site.x, y: cell.site.y }))
-
-            centroids = getWeightedCentroids(points);
-
-            // centroids = diagram.cells.map(cell => getCentroid(cell));
+            if (ii % 3 == 0) {
+                diagram = voronoi.compute(points, bbox);
+                points = diagram.cells.map((cell) => ({ x: cell.site.x, y: cell.site.y }))
+                centroids = diagram.cells.map(cell => getCentroid(cell));
+            } else {
+                centroids = getWeightedCentroids(points);
+            }
 
             for (var j = 0; j < points.length; j++) {
                 dir = sub(centroids[j], points[j])
                 const l = length(dir)
 
-                dir = mul(dir, 1 / (l + 0.0001))
-                dir = mul(dir, 0.1)
+                // dir = mul(dir, 1 / (l + 0.0001))
+                dir = mul(dir, 0.5)
                 points[j] = add(points[j], dir)
                 // points[j] = add(points[j], { x: Math.random(), y: Math.random() })
             }
-
         }
+
+
+        diagram = voronoi.compute(points, bbox);
 
         // paths = paths.concat(
         //     diagram.cells.map(cell => {
-        //         return getOutline(cell).map(p => [p.x, p.y])
+        //         return getOutline(cell, 0.1).map(p => [p.x, p.y])
         //     })
         // )
-        console.log(points, centroids)
+
+        // diagram.edges.forEach(edge => {
+        //     paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
+        // });
+
         paths = paths.concat(points.map(p => {
             var s = 1 - getPixel([p.x, p.y]) / 255 + 0.001
-            if (isNaN(s)) {
-                s = 0.01
-            }
+            if (isNaN(s)) { s = 0.01 }
 
-            return pathUtils.circlePath(p.x, p.y, s/2, 6)
-
+            return pathUtils.circlePath(p.x, p.y, s / 2, 6)
         }))
+
+
+        // registration marks
+        paths.push(pathUtils.circlePath(0, 0, 10, 3))
+        paths.push(pathUtils.circlePath(0, h, 10, 4))
+        paths.push(pathUtils.circlePath(w, h, 10, 5))
+        paths.push(pathUtils.circlePath(w, 0, 10, 6))
 
         // console.log(paths.flat().reduce((a, b) => (a + b), 0))
 
 
         // paths = paths.concat(points.map(p => pathUtils.circlePath(p.x, p.y, 0.2, 10)))
         /////Transform output
-        var scale = 50
-        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
-        // tx = 3000
-        // ty = 3000
-        // paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+
+        paths = pathUtils.transform(paths, 10, -500, -500)
+
         return paths
     }
 

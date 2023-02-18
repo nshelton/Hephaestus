@@ -181,6 +181,8 @@ THREE.InteractiveControls = function (camera, domElement) {
         if (intersects.length > 0) {
             _this.dragging = true;
             _selectedObject = intersects[0].object
+            _selectedObject.isMoving = true
+
             domElement.style.cursor = 'move';
 
         } else {
@@ -206,6 +208,8 @@ THREE.InteractiveControls = function (camera, domElement) {
         _this.canvasMove = false;
         _this.dragging = false;
         domElement.style.cursor = 'default';
+        if (_selectedObject) 
+            _selectedObject.isMoving = false
         _selectedObject = null;
 
         document.removeEventListener('mousemove', mousemove);

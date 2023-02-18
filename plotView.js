@@ -13,7 +13,7 @@ PlotViewer = function () {
     this.camera = new THREE.OrthographicCamera(0, 500, 0, 500, 1, 10000);
     this.controls = null;
     this.scene = new THREE.Scene();
-
+    this.dragables = []
     var _this = this;
 
     this.parseNodes = function (paths, polyline) {
@@ -91,73 +91,115 @@ PlotViewer = function () {
     const a3Width = 297
     const a3Height = 420
 
-    this.addDragNDrop = function (node, reScale = false) {
-        var bbox = new THREE.Box3().setFromObject(node);
+
+
+    this.addDragNDrop = function (node) {
+        const sphereGeo = new THREE.BoxGeometry(10, 10, 10);
+        // const sphereGeo = new THREE.SphereGeometry(5, 4, 4);
+        const originmaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.5 });
+
 
         const bbgeometry = new THREE.BoxGeometry(1, 1, 1);
-        const bbmaterial = new THREE.MeshBasicMaterial({ color: 0x88ff88, wireframe: true, transparent: true, opacity: 0.1 });
+        const bbmaterial = new THREE.MeshBasicMaterial({ color: 0x88ff88, wireframe: true, transparent: true, opacity: 0.5 });
 
-        this.boundingBox = new THREE.Mesh(bbgeometry, bbmaterial);
-        this.boundingBox.renderOrder = -1
-
+        var dragable = {
+            node: node,
+            boundingBox: new THREE.Mesh(bbgeometry, bbmaterial),
+            scaleWidget: new THREE.Mesh(sphereGeo, bbmaterial),
+            originDot : new THREE.Mesh(sphereGeo, originmaterial),
+            pos: new THREE.Vector3(),
+            dim: new THREE.Vector3(),
+            baseDistance : 1
+        }
+        // dragable.boundingBox.renderOrder = 100
 
         var bbox = new THREE.Box3().setFromObject(node);
+        bbox.getCenter(dragable.boundingBox.position)
+        bbox.getSize(dragable.boundingBox.scale)
+        dragable.node.add(dragable.boundingBox)
 
-        bbox.getCenter(this.boundingBox.position)
-        bbox.getSize(this.boundingBox.scale)
-        this.originalScale = this.boundingBox.scale.clone()
-        this.boundingBox.updateMatrix()
-        this.boundingBox.geometry.applyMatrix4(this.boundingBox.matrix);
-        this.boundingBox.updateMatrix()
+        dragable.originDot.scale.set(1, 1, 1)
+        this.scene.add(dragable.originDot)
+        this.scene.add(dragable.scaleWidget)
+        
 
-        this.boundingBox.position = new THREE.Vector3()
-        this.boundingBox.scale.set(1, 1, 1)
+        // var bottomRight = dragable.boundingBox.localToWorld(new THREE.Vector3(100,100,1))
+        // dragable.scaleWidget.position.copy(bottomRight)
 
-        this.boundingBox.updateMatrix()
-        this.scene.add(this.boundingBox)
+        dragable.scaleWidget.position.copy(dragable.boundingBox.scale)
+        dragable.scaleWidget.position.multiplyScalar(0.5)
+        dragable.scaleWidget.position.add(dragable.boundingBox.position)
 
-        node.removeFromParent()
-        this.boundingBox.add(node)
+        dragable.dim.copy(dragable.boundingBox.scale)
+        dragable.pos.copy(dragable.boundingBox.scale)
+        dragable.pos.multiplyScalar(-0.5)
+        dragable.pos.add(dragable.boundingBox.position)
 
-        const sphereGeo = new THREE.SphereGeometry(5, 4, 4);
-        const originmaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.5 });
-        this.originDot = new THREE.Mesh(sphereGeo, originmaterial);
-        this.originDot.scale.set(0.1, 0.1, 0.1)
-        this.boundingBox.add(this.originDot)
+        dragable.originDot.position.copy(dragable.pos)
+        
+        dragable.baseDistance = dragable.originDot.position.distanceTo(dragable.scaleWidget.position)
 
-        this.scaleWidget = new THREE.Mesh(sphereGeo, bbmaterial);
-        this.scene.add(this.scaleWidget)
-        this.scaleWidget.position.copy(this.originalScale)
+        this.controls.registerObject(dragable.originDot)
+        this.controls.registerObject(dragable.scaleWidget)
 
-        this.controls.registerObject(this.scaleWidget)
-        this.controls.registerObject(this.boundingBox)
+        this.dragables.push(dragable)
     }
 
     this.lastbboxpos = new THREE.Vector3()
 
     this.updateDragNDrop = function () {
+        this.dragables.forEach(d => {
+            if ( d.scaleWidget.isMoving) {
+                const aspect = d.boundingBox.scale.x/d.boundingBox.scale.y
+                const aspectCurrent = (d.scaleWidget.position.x - d.originDot.position.x) / (d.scaleWidget.position.y- d.originDot.position.y)
+    
+                const p0 = d.originDot.position
+                const p1 = d.scaleWidget.position
+                if (aspectCurrent > aspect) {
+                    d.scaleWidget.position.x = p0.x + aspect * (p1.y- p0.y) 
+                }
+                if (aspectCurrent < aspect) {
+                    d.scaleWidget.position.y = p0.y + (p1.x- p0.x) /aspect
+                }
+    
+            }
 
-        if (this.boundingBox == null || this.scaleWidget == null) {
-            return
-        }
+            if ( d.originDot.isMoving) {
+                d.scaleWidget.position.copy(d.dim).multiplyScalar(d.node.scale.x).add(d.originDot.position)
+            }
+          
+    
+            // var dist = d.scaleWidget.position.distanceTo(d.boundingBox.position)
+            var pos = new THREE.Vector3(0,0,0)
 
-        var d = this.scaleWidget.position.distanceTo(this.boundingBox.position) / this.originalScale.x
+            var s = d.originDot.position.distanceTo(d.scaleWidget.position) / d.baseDistance
+            d.node.scale.set(s,s,s)
 
-        if (d != this.boundingBox.scale.x) {
-            this.boundingBox.scale.set(d, d, d)
-        }
-        if (this.lastbboxpos.x != 0) {
-            var tmp = new THREE.Vector3()
-            tmp.subVectors(this.boundingBox.position, this.lastbboxpos)
 
-            this.scaleWidget.position.add(tmp)
-        }
+            // pos.copy(d.originDot.position)
+            // pos.sub(d.offset)
+            d.node.position.copy(d.pos).multiplyScalar(-s).add(d.originDot.position)
 
-        this.lastbboxpos.copy(this.boundingBox.position)
+    
+
+        })
+
+
+        // if (d != this.boundingBox.scale.x) {
+        //     this.boundingBox.scale.set(d, d, d)
+        // }
+        // if (this.lastbboxpos.x != 0) {
+        //     var tmp = new THREE.Vector3()
+        //     tmp.subVectors(this.boundingBox.position, this.lastbboxpos)
+
+        //     this.scaleWidget.position.add(tmp)
+        // }
+
+        // this.lastbboxpos.copy(this.boundingBox.position)
     }
 
 
-    this.AddPaths = function (paths) {
+    this.CreatePaths = function (paths) {
         this.container = new THREE.Object3D()
         const material = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: false });
 
@@ -166,28 +208,11 @@ PlotViewer = function () {
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, material);
 
-
             this.lineObjects.push(line)
             this.container.add(line);
             this.segments.push(points)
         })
 
-        this.scene.add(this.container)
-        this.addDragNDrop(this.container)
-    }
-
-    this.AddPath = function (path) {
-        this.container = new THREE.Object3D()
-        const material = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: false });
-
-        const points = path.map(s => new THREE.Vector3(s[0] / 100, s[1] / 100, 0))
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const line = new THREE.Line(geometry, material);
-
-
-        this.lineObjects.push(line)
-        this.container.add(line);
-        this.segments.push(points)
         this.scene.add(this.container)
         this.addDragNDrop(this.container)
     }
@@ -201,17 +226,13 @@ PlotViewer = function () {
         this.camera.lookAt(new THREE.Vector3());
         this.controls = new THREE.InteractiveControls(this.camera, this.renderer.domElement);
 
-
         const geometry = new THREE.PlaneGeometry(a3Height, a3Width, a3Height / 10, a3Width / 10);
         const material = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x333333, side: THREE.DoubleSide });
         const plane = new THREE.Mesh(geometry, material);
         plane.position.set(a3Height / 2, a3Width / 2, 0)
         this.scene.add(plane);
 
-
-        const linematerial = new THREE.LineBasicMaterial({
-            color: 0xe61d5f
-        });
+        const linematerial = new THREE.LineBasicMaterial({ color: 0xe61d5f });
 
         const points = [];
         points.push(new THREE.Vector3(a3Height, 0, 0));
