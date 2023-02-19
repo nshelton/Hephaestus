@@ -86,13 +86,13 @@ imageUtils = function () {
             m = 255 - g;
             y = 255 - b;
             /* find the black level k */
-            K = minimum(c, m, y)
+            K = Math.min(c, m, y)
             /* correct complementary color lever based on k */
             C = c - K
             M = m - K
             Y = y - K
 
-            return [c,m,y,K]
+            return [c, m, y, K]
         }
 
         for (var i = 0; i < bitmap.length; i += 4) {
@@ -101,11 +101,11 @@ imageUtils = function () {
 
             cmyk = rbg2cmyk(bitmap[i], bitmap[i + 1], bitmap[i + 2])
             // specific channels
-            val = bitmap[i + 0] * 3
+            // val = bitmap[i + 2] * 3
+            val = 255 - cmyk[2]
+            // val *= bitmap[i + 3] / 255
 
-            // alpha ? 
-            val *= bitmap[i + 3] / 255
-            grayscale.push(val / 3)
+            grayscale.push(val)
         }
 
         function getPixel(p) {
@@ -113,7 +113,7 @@ imageUtils = function () {
         }
 
         points = []
-        const nPoints = 1000
+        const nPoints = 20000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -214,6 +214,12 @@ imageUtils = function () {
         //     paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
         // });
 
+        // diagram.edges.forEach(edge => {
+        //     if (edge.lSite != null && edge.rSite != null) {
+        //         paths.push([[edge.lSite.x, edge.lSite.y], [edge.rSite.x, edge.rSite.y]])
+        //     }
+        // });
+
         paths = paths.concat(points.map(p => {
             var s = 1 - getPixel([p.x, p.y]) / 255 + 0.001
             if (isNaN(s)) { s = 0.01 }
@@ -223,19 +229,33 @@ imageUtils = function () {
 
 
         // registration marks
-        paths.push(pathUtils.circlePath(0, 0, 10, 3))
-        paths.push(pathUtils.circlePath(0, h, 10, 4))
-        paths.push(pathUtils.circlePath(w, h, 10, 5))
-        paths.push(pathUtils.circlePath(w, 0, 10, 6))
+        paths.push(pathUtils.circlePath(0, 0, 2, 3))
+        paths.push(pathUtils.circlePath(0, h, 2, 4))
+        paths.push(pathUtils.circlePath(w, h, 2, 5))
+        paths.push(pathUtils.circlePath(w, 0, 2, 6))
 
         // console.log(paths.flat().reduce((a, b) => (a + b), 0))
-
-
         // paths = paths.concat(points.map(p => pathUtils.circlePath(p.x, p.y, 0.2, 10)))
         /////Transform output
 
-        paths = pathUtils.transform(paths, 10, -500, -500)
+        paths = pathUtils.transform(paths, 20, 1000, 1000)
 
+        return paths
+    }
+
+    this.gradient = function () {
+        paths = []
+        const nLines = 100
+        var x = 0
+
+        for (var i = 0; i < nLines; i++) {
+            ii = nLines - i
+            x += ii * ii / 5000
+            paths.push([[x + 10 * (Math.sqrt(3) / 2), 0], [x, 10]])
+        }
+
+        console.log(paths)
+        paths = pathUtils.transform(paths, 200, 1000, 8000)
         return paths
     }
 

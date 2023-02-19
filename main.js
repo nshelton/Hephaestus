@@ -45,7 +45,7 @@ async function plotPath(paths) {
     })
 
     moveTo([0, 0])
-
+    plotter.startTime = new Date()
     //TODO: clean queue to remove the up / move 0 0 / down pattern
     console.log(queue)
 }
@@ -152,7 +152,7 @@ function init() {
         grid: function () { createPlot(pathUtils.gridTest()) },
         rect: function () { createPlot([pathUtils.rectPath(100, 100, 1000, 1000)]) },
         circleGrid: function () { createPlot(pathUtils.circleGrid()) },
-        dragon: function () { createPlot([pathUtils.dragonPath()]) },
+        dragon: function () { createPlot(pathUtils.dragonPath()) },
         circle: function () { createPlot([pathUtils.circlePath(2000, 2000, 4000, 5)]) },
         flowField: function () { createPlot(pathUtils.flowField()) },
         apollo: function () { createPlot(pathUtils.apollonian()) },
@@ -226,10 +226,11 @@ function init() {
 
         textstring = new Date().toLocaleString()
         var textPath = pathUtils.text(textstring)
-        var textPath = pathUtils.transform(textPath, 1, 500, 1000)
+        var textPath = pathUtils.transform(textPath, 0.5, 500, 1000)
         createPlot(textPath)
 
-        // createPlot(pathUtils.voronoi())
+        // createPlot(imageUtils.gradient())
+        createPlot(pathUtils.voronoi())
 
     }, "100")
 

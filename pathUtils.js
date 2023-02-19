@@ -44,6 +44,7 @@ PathUtils = function () {
             i++; c += i / (i & -i);
         }
         console.log(path)
+
         return (path)
     }
 
@@ -594,14 +595,21 @@ PathUtils = function () {
         sites = points.map(p => {return {x:p[0], y:p[1]}})
         diagram = voronoi.compute(sites, bbox);
 
-        diagram.edges.forEach(edge => {
-           paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
+        // diagram.edges.forEach(edge => {
+        //    paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
+        // });
+
+          diagram.edges.forEach(edge => {
+            if (edge.lSite != null && edge.rSite != null) {
+                paths.push([[edge.lSite.x, edge.lSite.y], [edge.rSite.x, edge.rSite.y]])
+            }
         });
+
 
         var scale = 5000
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
-        tx = 3000
-        ty = 3000
+        tx = 5500
+        ty = 8000
         paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
 
         console.log(paths)

@@ -144,11 +144,22 @@ PlotterGUI = function() {
         percent = Math.round(100 * plotter.commandsSent / total)
         this.queuebar.style.width = percent + "%"
         
-        // this.progressbar.style.width =  "60%"
-        // this.queuebar.style.width = "70%"
-
         this.debugText.innerHTML = "queue : " + queue.length + "&#9;"
         this.debugText.innerHTML += "sent : " +  plotter.commandsSent + "&#9;"
-        this.debugText.innerHTML += "complete : " +  plotter.commandsCompleted + "&#9;"
+        this.debugText.innerHTML += "complete : " +  plotter.commandsCompleted + "&#9; | "
+
+        if ( plotter.startTime) {
+            let elapsed = Math.abs(new Date() - plotter.startTime.getTime());
+            let fraction = (plotter.commandsCompleted / (queue.length + plotter.commandsSent));
+            this.debugText.innerHTML += (100 * fraction).toFixed(1) + "%" + "&#9;| "
+            if ( fraction > 0.001) {
+                let remaining = elapsed /fraction - elapsed
+            this.debugText.innerHTML += new Date(elapsed).toISOString().substring(11, 19) + " elapsed" + "&#9; | "
+            this.debugText.innerHTML += new Date(remaining).toISOString().substring(11, 19) + " / " 
+            this.debugText.innerHTML += new Date(elapsed /fraction).toISOString().substring(11, 19) 
+            }
+
+        }
+
     }
 }

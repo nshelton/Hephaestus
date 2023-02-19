@@ -1,13 +1,8 @@
 
 PlotViewer = function () {
 
-
     this.lineObjects = []
     this.segments = []
-
-    var boundingBox = null
-    var container = null
-    var scaleWidget = null
 
     this.renderer = new THREE.WebGLRenderer();
     this.camera = new THREE.OrthographicCamera(0, 500, 0, 500, 1, 10000);
@@ -73,8 +68,7 @@ PlotViewer = function () {
 
         this.lineObjects.forEach(line => {
             var posBuffer = line.geometry.attributes.position.clone()
-            // console.log(this.boundingBox.matrix)
-            posBuffer.applyMatrix4(this.boundingBox.matrix)
+            posBuffer.applyMatrix4(line.matrixWorld)
 
             coords = []
 
@@ -90,8 +84,6 @@ PlotViewer = function () {
 
     const a3Width = 297
     const a3Height = 420
-
-
 
     this.addDragNDrop = function (node) {
         const sphereGeo = new THREE.BoxGeometry(10, 10, 10);
@@ -121,10 +113,6 @@ PlotViewer = function () {
         dragable.originDot.scale.set(1, 1, 1)
         this.scene.add(dragable.originDot)
         this.scene.add(dragable.scaleWidget)
-        
-
-        // var bottomRight = dragable.boundingBox.localToWorld(new THREE.Vector3(100,100,1))
-        // dragable.scaleWidget.position.copy(bottomRight)
 
         dragable.scaleWidget.position.copy(dragable.boundingBox.scale)
         dragable.scaleWidget.position.multiplyScalar(0.5)
@@ -140,12 +128,11 @@ PlotViewer = function () {
         dragable.baseDistance = dragable.originDot.position.distanceTo(dragable.scaleWidget.position)
 
         this.controls.registerObject(dragable.originDot)
+        this.controls.registerObject(dragable.boundingBox)
         this.controls.registerObject(dragable.scaleWidget)
 
         this.dragables.push(dragable)
     }
-
-    this.lastbboxpos = new THREE.Vector3()
 
     this.updateDragNDrop = function () {
         this.dragables.forEach(d => {
@@ -161,43 +148,18 @@ PlotViewer = function () {
                 if (aspectCurrent < aspect) {
                     d.scaleWidget.position.y = p0.y + (p1.x- p0.x) /aspect
                 }
-    
             }
 
             if ( d.originDot.isMoving) {
                 d.scaleWidget.position.copy(d.dim).multiplyScalar(d.node.scale.x).add(d.originDot.position)
             }
           
-    
-            // var dist = d.scaleWidget.position.distanceTo(d.boundingBox.position)
-            var pos = new THREE.Vector3(0,0,0)
-
             var s = d.originDot.position.distanceTo(d.scaleWidget.position) / d.baseDistance
             d.node.scale.set(s,s,s)
-
-
-            // pos.copy(d.originDot.position)
-            // pos.sub(d.offset)
             d.node.position.copy(d.pos).multiplyScalar(-s).add(d.originDot.position)
-
-    
-
         })
 
-
-        // if (d != this.boundingBox.scale.x) {
-        //     this.boundingBox.scale.set(d, d, d)
-        // }
-        // if (this.lastbboxpos.x != 0) {
-        //     var tmp = new THREE.Vector3()
-        //     tmp.subVectors(this.boundingBox.position, this.lastbboxpos)
-
-        //     this.scaleWidget.position.add(tmp)
-        // }
-
-        // this.lastbboxpos.copy(this.boundingBox.position)
     }
-
 
     this.CreatePaths = function (paths) {
         this.container = new THREE.Object3D()
