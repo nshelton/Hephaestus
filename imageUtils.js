@@ -13,7 +13,47 @@ imageUtils = function () {
         }
         result
     }
+    this.hatch = function (bitmap, w, h) {
 
+        function getPixel(p) {
+            return grayscale[(Math.round(p[0]) + Math.round(p[1]) * w)]
+        }
+        function rbg2cmyk(r, g, b) {
+            /* calculate complementary colors */
+            c = 255 - r;
+            m = 255 - g;
+            y = 255 - b;
+            /* find the black level k */
+            K = Math.min(c, m, y)
+            /* correct complementary color lever based on k */
+            C = c - K
+            M = m - K
+            Y = y - K
+
+            return [c, m, y, K]
+        }
+        function luma(r, g, b) { return 0.2126 * r + 0.7152 * g + 0.0722 * b  }
+
+        for (var i = 0; i < bitmap.length; i += 4) {
+
+            val = bitmap[i] + bitmap[i + 1] + bitmap[i + 2]
+
+            cmyk = rbg2cmyk(bitmap[i], bitmap[i + 1], bitmap[i + 2])
+            // specific channels
+            // val = bitmap[i + 2] * 3
+            val = luma(bitmap[i], bitmap[i + 1], bitmap[i + 2])
+            // val = 255 - cmyk[2]
+            // val *= bitmap[i + 3] / 255
+
+            grayscale.push(val)
+        }
+
+        grayscale = []
+        if (grayscale.length % 4 != 0) {
+            alert("invalid image")
+            return
+        }
+    }
 
     this.dither = function (bitmap, w, h) {
         function getCentroid(cell) {
@@ -74,12 +114,9 @@ imageUtils = function () {
         }
 
 
-        grayscale = []
-        if (grayscale.length % 4 != 0) {
-            alert("invalid image")
-            return
+        function getPixel(p) {
+            return grayscale[(Math.round(p[0]) + Math.round(p[1]) * w)]
         }
-
         function rbg2cmyk(r, g, b) {
             /* calculate complementary colors */
             c = 255 - r;
@@ -94,7 +131,10 @@ imageUtils = function () {
 
             return [c, m, y, K]
         }
+        function luma(r, g, b) { return 0.2126 * r + 0.7152 * g + 0.0722 * b  }
 
+        grayscale = []
+ 
         for (var i = 0; i < bitmap.length; i += 4) {
 
             val = bitmap[i] + bitmap[i + 1] + bitmap[i + 2]
@@ -102,18 +142,20 @@ imageUtils = function () {
             cmyk = rbg2cmyk(bitmap[i], bitmap[i + 1], bitmap[i + 2])
             // specific channels
             // val = bitmap[i + 2] * 3
-            val = 255 - cmyk[2]
+            val = luma(bitmap[i], bitmap[i + 1], bitmap[i + 2])
+            // val = 255 - cmyk[2]
             // val *= bitmap[i + 3] / 255
 
             grayscale.push(val)
         }
 
-        function getPixel(p) {
-            return grayscale[(Math.round(p[0]) + Math.round(p[1]) * w)]
+        if (grayscale.length % 4 != 0) {
+            alert("invalid image")
+            return
         }
 
         points = []
-        const nPoints = 20000
+        const nPoints = 50000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -163,7 +205,7 @@ imageUtils = function () {
                     if (!(points[lastIdx].x == near.x && points[lastIdx].y == near.y)) {
                         idx = lastIdx
                     } else {
-                        const idx = points.findIndex(p => {
+                        idx = points.findIndex(p => {
                             return p.x == near.x && p.y == near.y
                         })
                     }
@@ -201,7 +243,6 @@ imageUtils = function () {
             }
         }
 
-
         diagram = voronoi.compute(points, bbox);
 
         // paths = paths.concat(
@@ -223,22 +264,21 @@ imageUtils = function () {
         paths = paths.concat(points.map(p => {
             var s = 1 - getPixel([p.x, p.y]) / 255 + 0.001
             if (isNaN(s)) { s = 0.01 }
-
             return pathUtils.circlePath(p.x, p.y, s / 2, 6)
         }))
 
 
         // registration marks
-        paths.push(pathUtils.circlePath(0, 0, 2, 3))
-        paths.push(pathUtils.circlePath(0, h, 2, 4))
-        paths.push(pathUtils.circlePath(w, h, 2, 5))
-        paths.push(pathUtils.circlePath(w, 0, 2, 6))
+        // paths.push(pathUtils.circlePath(0, 0, 2, 3))
+        // paths.push(pathUtils.circlePath(0, h, 2, 4))
+        // paths.push(pathUtils.circlePath(w, h, 2, 5))
+        // paths.push(pathUtils.circlePath(w, 0, 2, 6))
 
         // console.log(paths.flat().reduce((a, b) => (a + b), 0))
         // paths = paths.concat(points.map(p => pathUtils.circlePath(p.x, p.y, 0.2, 10)))
         /////Transform output
 
-        paths = pathUtils.transform(paths, 20, 1000, 1000)
+        paths = pathUtils.transform(paths, 40, 1000, 1000)
 
         return paths
     }

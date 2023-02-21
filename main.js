@@ -224,13 +224,15 @@ function init() {
             customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
         }
 
-        textstring = new Date().toLocaleString()
-        var textPath = pathUtils.text(textstring)
+        // textstring = new Date().toLocaleString()
+        textstring = + new Date()
+        var textPath = pathUtils.text(textstring + "")
+         textPath.flat(2)
         var textPath = pathUtils.transform(textPath, 0.5, 500, 1000)
         createPlot(textPath)
 
         // createPlot(imageUtils.gradient())
-        createPlot(pathUtils.voronoi())
+        // createPlot(pathUtils.voronoi())
 
     }, "100")
 

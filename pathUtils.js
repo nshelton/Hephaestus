@@ -502,7 +502,7 @@ PathUtils = function () {
 
     }
 
-    this.sierpinski  = function () {
+    this.sierpinski = function () {
         const that = this;
         sqrt32 = Math.sqrt(3) / 2
         paths = []
@@ -519,13 +519,13 @@ PathUtils = function () {
                 return
             }
 
-            subdivide([pos[0] + tri[0][0] * scale, pos[1] + tri[0][1] * scale], level+1)
-            subdivide([pos[0] + tri[1][0] * scale, pos[1] + tri[1][1] * scale], level+1)
-            subdivide([pos[0] + tri[2][0] * scale, pos[1] + tri[2][1] * scale], level+1)
+            subdivide([pos[0] + tri[0][0] * scale, pos[1] + tri[0][1] * scale], level + 1)
+            subdivide([pos[0] + tri[1][0] * scale, pos[1] + tri[1][1] * scale], level + 1)
+            subdivide([pos[0] + tri[2][0] * scale, pos[1] + tri[2][1] * scale], level + 1)
         }
 
 
-        subdivide([0,0], 1)
+        subdivide([0, 0], 1)
 
 
         var scale = 15000
@@ -540,7 +540,7 @@ PathUtils = function () {
 
     }
 
-    this.cyrb128 = function(str) {
+    this.cyrb128 = function (str) {
         let h1 = 1779033703, h2 = 3144134277,
             h3 = 1013904242, h4 = 2773480762;
         for (let i = 0, k; i < str.length; i++) {
@@ -554,28 +554,53 @@ PathUtils = function () {
         h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
         h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
         h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
-        return [(h1^h2^h3^h4)>>>0, (h2^h1)>>>0, (h3^h1)>>>0, (h4^h1)>>>0];
+        return [(h1 ^ h2 ^ h3 ^ h4) >>> 0, (h2 ^ h1) >>> 0, (h3 ^ h1) >>> 0, (h4 ^ h1) >>> 0];
     }
 
 
-    this.mulberry32 = function(a) {
-        return function() {
-          var t = a += 0x6D2B79F5;
-          t = Math.imul(t ^ t >>> 15, t | 1);
-          t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    this.mulberry32 = function (a) {
+        return function () {
+            var t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
         }
     }
 
     // Only one 32-bit component hash is needed for mulberry32.
-    this.rand = function() {return this.mulberry32(this.cyrb128("mouse")[0])};
+    this.rand = function () { return this.mulberry32(this.cyrb128("mouse")[0]) };
 
-    this.voronoi  = function () {
+    this.voronoi = function () {
+
+        function uniquePoints(value, index, array) { return array.findIndex(v => v.x == value.x && v.y == value.y) === index; }
+        function mul(a, b) { return { x: a.x * b, y: a.y * b } }
+        function add(a, b) { return { x: a.x + b.x, y: a.y + b.y } }
+        function lerp(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t } }
+        function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y } }
+        function length(a) { return Math.sqrt(a.x * a.x + a.y * a.y) }
+        function sqDistance(a, b) { return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) }
+        function getAngle(a, b) { return Math.atan2((a.x - b.x), (a.y - b.y)) }
+
+        function getOutline(cell, inset = 0) {
+            verts = cell.halfedges.map(he => [he.edge.va, he.edge.vb]).flat(2)
+            verts = verts.filter(uniquePoints);
+            center = verts.reduce(add, { x: 0, y: 0 })
+            center = mul(center, 1 / verts.length)
+            pointsAndAngles = verts.map(p => { return { point: p, angle: getAngle(p, center) } })
+            sorted = pointsAndAngles.sort((a, b) => a.angle - b.angle).map(e => e.point)
+            sorted.push(sorted[0])
+            if (inset > 0) {
+                sorted = sorted.map(p => lerp(p, center, inset))
+            }
+            return sorted
+        }
+
+
         const rand = this.rand()
         function gauss() {
             let sigma = 2
             let val = 1
-            for (var i = 0; i < sigma; i ++) {
+            for (var i = 0; i < sigma; i++) {
                 val *= 2.0 * (rand() - 0.5)
             }
             return val
@@ -583,27 +608,72 @@ PathUtils = function () {
 
         nPoints = 100
         points = []
-        for(var i = 0; i < nPoints; i ++) {
+        for (var i = 0; i < nPoints; i++) {
             p = [gauss(), gauss()]
             points.push(p)
         }
         paths = []
-        paths = points.map(p => this.circlePath(p[0], p[1], 0.01, 30))
-        
-        bbox= {xl:-1,xr:1,yt:-1,yb:1}
+        // paths = points.map(p => this.circlePath(p[0], p[1], 0.01, 30))
+
+        bbox = { xl: -1, xr: 1, yt: -1, yb: 1 }
         voronoi = new Voronoi()
-        sites = points.map(p => {return {x:p[0], y:p[1]}})
+        sites = points.map(p => { return { x: p[0], y: p[1] } })
         diagram = voronoi.compute(sites, bbox);
 
         // diagram.edges.forEach(edge => {
         //    paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
         // });
 
-          diagram.edges.forEach(edge => {
-            if (edge.lSite != null && edge.rSite != null) {
-                paths.push([[edge.lSite.x, edge.lSite.y], [edge.rSite.x, edge.rSite.y]])
+        //   diagram.edges.forEach(edge => {
+        //     if (edge.lSite != null && edge.rSite != null) {
+        //         paths.push([[edge.lSite.x, edge.lSite.y], [edge.rSite.x, edge.rSite.y]])
+        //     }
+        // });
+
+        function subdivide(path) {
+
+            result = []
+
+            for (var i = 0; i < path.length - 1; i++) {
+                result.push(path[i])
+                result.push(lerp(path[i], path[i + 1], 0.5))
             }
-        });
+
+            result.push(path[path.length - 1])
+            result.push(lerp(path[path.length - 1], path[1], 0.5))
+
+            return result
+        }
+
+        function smooth(path, amount) {
+            var start = lerp(path[1], path[path.length - 2], 0.5)
+            start = lerp(path[0], start, amount)
+            result = [start]
+
+            for (var i = 1; i < path.length - 1; i++) {
+                var avg = lerp(path[i - 1], path[i + 1], 0.5)
+                result.push(lerp(path[i], avg, amount))
+            }
+
+            result.push(start)
+            return result
+        }
+
+        paths = paths.concat(
+            diagram.cells.map(cell => {
+                var outline = getOutline(cell, 0)
+
+                for (let i = 0; i < 3; i++) {
+                    outline = subdivide(outline)
+                }
+
+                for (let i = 0; i < 100; i++) {
+                    outline = smooth(outline, 0.5)
+                }
+
+                return outline.map(p => [p.x, p.y])
+            })
+        )
 
 
         var scale = 5000
