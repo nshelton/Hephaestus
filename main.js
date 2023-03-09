@@ -110,7 +110,7 @@ function loadImage(file) {
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
         var pix = imgd.data;
 
-        createPlot(imageUtils.dither(pix, data.width, data.height))
+        createPlot(imageUtils.hatch(pix, data.width, data.height, optomizer))
 
     })
 
@@ -160,6 +160,7 @@ function init() {
         sierpinski: function () { createPlot(pathUtils.sierpinski()) },
         voronoi: function () { createPlot(pathUtils.voronoi()) },
         timestamp: function () { createPlot(pathUtils.timestamp()) },
+        darkmode: function () { viewer.toggleColors() },
 
     };
 
@@ -177,6 +178,7 @@ function init() {
     gui.add(guiParams, 'mandala')
     gui.add(guiParams, 'sierpinski')
     gui.add(guiParams, 'voronoi')
+    gui.add(guiParams, 'darkmode')
 
     app = {
         plot: plotCurrent,

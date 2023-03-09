@@ -13,8 +13,24 @@ imageUtils = function () {
         }
         result
     }
-    this.hatch = function (bitmap, w, h) {
+    this.hatch = function (bitmap, w, h, optomizer) {
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
 
+            // While there remain elements to shuffle.
+            while (currentIndex != 0) {
+
+                // Pick a remaining element.
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+
+                // And swap it with the current element.
+                [array[currentIndex], array[randomIndex]] = [
+                    array[randomIndex], array[currentIndex]];
+            }
+
+            return array;
+        }
         function getPixel(p) {
             return grayscale[(Math.round(p[0]) + Math.round(p[1]) * w)]
         }
@@ -33,26 +49,44 @@ imageUtils = function () {
             return [c, m, y, K]
         }
         function luma(r, g, b) { return 0.2126 * r + 0.7152 * g + 0.0722 * b  }
+        grayscale = []
 
         for (var i = 0; i < bitmap.length; i += 4) {
-
             val = bitmap[i] + bitmap[i + 1] + bitmap[i + 2]
-
-            cmyk = rbg2cmyk(bitmap[i], bitmap[i + 1], bitmap[i + 2])
-            // specific channels
-            // val = bitmap[i + 2] * 3
             val = luma(bitmap[i], bitmap[i + 1], bitmap[i + 2])
-            // val = 255 - cmyk[2]
-            // val *= bitmap[i + 3] / 255
-
             grayscale.push(val)
         }
+        bands = 50
+        paths = [[],[],[],[]]
+        skip = 1
+        for (var x = 0; x < w; x +=skip) {
+            console.log(x / w)
+            for (var y = 0; y < h; y +=skip) {
+                let px = getPixel([x,y])
 
-        grayscale = []
-        if (grayscale.length % 4 != 0) {
-            alert("invalid image")
-            return
+                if (px <  bands * 3) {
+                    paths[0].push([[x,y], [x+skip, y+skip]])
+                }
+                if (px <  bands * 4) {
+                    paths[1].push([[x+skip,y], [x, y+skip]])
+                }
+                if (px < bands * 1) {
+                    paths[2].push([[x,y], [x+skip, y]])
+                }
+                if (px < bands * 2) {
+                    paths[3].push([[x,y], [x, y+skip]])
+                }
+            }
         }
+        
+        paths = paths.map(p => optomizer.optomize(p)).flat(1)
+        paths = pathUtils.transform(paths, 40, 1000, 1000)
+
+        paths = shuffle(paths)
+        paths = paths.splice(0, paths.length - 1000)
+        paths
+        return paths
+
     }
 
     this.dither = function (bitmap, w, h) {
@@ -155,7 +189,7 @@ imageUtils = function () {
         }
 
         points = []
-        const nPoints = 50000
+        const nPoints = 20000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -197,7 +231,9 @@ imageUtils = function () {
             for (var x = 0; x < w; x++) {
                 for (var y = 0; y < h; y++) {
 
-                    const brightness = 255 - grayscale[x + y * w]
+                    var brightness = 255 - grayscale[x + y * w]
+
+                    // brightness = Math.pow(brightness, )
                     point = { x: x + 0.5, y: y + 0.5 }
                     const near = tree.nearest(point, 1)[0][0]
 
@@ -220,11 +256,12 @@ imageUtils = function () {
 
         voronoi = new Voronoi()
         // relax
-        const iterations = 20
+        const iterations = 25
         for (var ii = 0; ii < iterations; ii++) {
             console.log(ii)
             bbox = getBbox(points)
-            if (ii % 3 == 0) {
+            // if (ii <10) {
+            if (ii % 5  == 0) {
                 diagram = voronoi.compute(points, bbox);
                 points = diagram.cells.map((cell) => ({ x: cell.site.x, y: cell.site.y }))
                 centroids = diagram.cells.map(cell => getCentroid(cell));
@@ -250,22 +287,25 @@ imageUtils = function () {
         //         return getOutline(cell, 0.1).map(p => [p.x, p.y])
         //     })
         // )
-
+        
+        // voronoi
         // diagram.edges.forEach(edge => {
         //     paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
         // });
 
-        // diagram.edges.forEach(edge => {
-        //     if (edge.lSite != null && edge.rSite != null) {
-        //         paths.push([[edge.lSite.x, edge.lSite.y], [edge.rSite.x, edge.rSite.y]])
-        //     }
-        // });
+        // delaunay
+        diagram.edges.forEach(edge => {
+            if (edge.lSite != null && edge.rSite != null) {
+                paths.push([[edge.lSite.x, edge.lSite.y], [edge.rSite.x, edge.rSite.y]])
+            }
+        });
 
-        paths = paths.concat(points.map(p => {
-            var s = 1 - getPixel([p.x, p.y]) / 255 + 0.001
-            if (isNaN(s)) { s = 0.01 }
-            return pathUtils.circlePath(p.x, p.y, s / 2, 6)
-        }))
+        // dots
+        // paths = paths.concat(points.map(p => {
+        //     var s = 1 - getPixel([p.x, p.y]) / 255 + 0.01
+        //     if (isNaN(s)) { s = 0.01 }
+        //     return pathUtils.circlePath(p.x, p.y, s / 2, 6)
+        // }))
 
 
         // registration marks
@@ -277,6 +317,10 @@ imageUtils = function () {
         // console.log(paths.flat().reduce((a, b) => (a + b), 0))
         // paths = paths.concat(points.map(p => pathUtils.circlePath(p.x, p.y, 0.2, 10)))
         /////Transform output
+        console.log(paths)
+        //hacky rotate
+
+        paths = paths.map(path => path.map(p => [p[1], p[0]]))
 
         paths = pathUtils.transform(paths, 40, 1000, 1000)
 

@@ -414,6 +414,23 @@ PathUtils = function () {
 
     }
 
+    this.noise = function () {
+
+        paths = []
+
+        // field = 
+
+        // for
+
+
+        var scale = 20
+        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
+        tx = 2000
+        ty = 2000
+        paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+        return paths
+
+    }
 
     this.apollonian = function () {
 
@@ -513,7 +530,7 @@ PathUtils = function () {
 
             var scale = 1 / Math.pow(2.0, level)
 
-            if (level > 6) {
+            if (level > 5) {
                 // paths.push(tri.map(p => [p[0] * scale *2 + pos[0], p[1] * scale *2 + pos[1]]))
                 paths.push(that.circlePath(pos[0], pos[1], scale, 10))
                 return
@@ -528,10 +545,10 @@ PathUtils = function () {
         subdivide([0, 0], 1)
 
 
-        var scale = 15000
+        var scale = 10000
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
-        tx = 5000
-        ty = 100
+        tx = 9000
+        ty = 1500
         paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
 
         console.log(paths)

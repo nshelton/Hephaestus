@@ -33,47 +33,54 @@ Optomizer = function () {
         score = this.getScore(paths)
         console.log(score)
 
+        var distance = function(a, b){
+            return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2);
+          }
+          
+        pointsStart = paths.map((p, idx) => ({x:p[0][0], y:p[0][1], i:idx}))
+        pointsStart.shift()
 
-        picked = paths.map(p => 0)
+        // pointsEnd = paths.map((p, idx) => ({x:p[p.length-1][0], y:p[p.length-1][1], i:idx}))
+        // pointsEnd.shift()
+        
+        console.log(pointsStart)
+
+        var treeStarts = new kdTree(pointsStart, distance, ["x", "y"]);
+        // var treeEnds = new kdTree(pointsEnd, distance, ["x", "y"]);
 
         reorderedPaths = [paths[0]]
-        while (paths.length) {
+
+        pathsConsumed = 1
+        
+        while (pathsConsumed < paths.length) {
+        // while (pathsConsumed < 10) {
             
-            console.log(i, paths.length)
+            console.log(pathsConsumed, paths.length)
             thisPath = reorderedPaths[reorderedPaths.length - 1]
 
-            bestPathIdx = 0
-            bestDistance = 1e10
-            bestPath = null
-
-            for (var i = 0; i < paths.length; i++) {
-
-                //forward
-                dx = Math.round(paths[i][0][0] - thisPath[thisPath.length - 1][0])
-                dy = Math.round(paths[i][0][1] - thisPath[thisPath.length - 1][1])
-                distance = Math.sqrt(dx * dx + dy * dy)
-
-                if (distance < bestDistance) {
-                    bestPathIdx = i
-                    bestDistance = distance
-                    bestPath = paths[i]
-                }
-
-                //backward
-                dx = Math.round(paths[i][paths[i].length - 1][0] - thisPath[thisPath.length - 1][0])
-                dy = Math.round(paths[i][paths[i].length - 1][1] - thisPath[thisPath.length - 1][1])
-                distance = Math.sqrt(dx * dx + dy * dy)
-
-                if (distance < bestDistance) {
-                    bestPathIdx = i
-                    bestDistance = distance
-                    bestPath = paths[i].reverse()
-                }
+            console.log(thisPath)
+            endOfPath = {
+                x:thisPath[thisPath.length - 1][0], 
+                y:thisPath[thisPath.length - 1][1]
             }
 
-            dx = Math.round(bestPath[0][0] - thisPath[thisPath.length - 1][0])
-            dy = Math.round(bestPath[0][1] - thisPath[thisPath.length - 1][1])
-            distance = Math.sqrt(dx * dx + dy * dy)
+            closestStart = treeStarts.nearest(endOfPath, 1)[0]
+
+            // closestEnd = treeEnds.nearest(endOfPath, 2)
+            // closestEnd.sort((a,b) => a[1] - b[1])
+            // closestEnd = closestEnd[1]
+            distance = closestStart[1]
+            console.log(distance )
+            console.log(closestStart[0])
+            treeStarts.remove(closestStart[0])
+
+            bestIndex = closestStart[0].i
+            console.log("estindex", bestIndex)
+            bestPath = paths[bestIndex]
+
+            // if ( closestEnd < closestStart) {
+                // bestPath = paths[i].reverse()
+            // }
 
             if (distance < 0.0001) {
                 reorderedPaths[reorderedPaths.length - 1] = thisPath.concat(bestPath.slice(1))
@@ -82,7 +89,8 @@ Optomizer = function () {
                 reorderedPaths.push(bestPath)
             }
 
-            paths.splice(bestPathIdx, 1)
+            pathsConsumed ++;
+            // paths.splice(bestPathIdx, 1)
         }
 
         newScore = this.getScore(reorderedPaths)
