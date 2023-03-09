@@ -234,7 +234,8 @@ function init() {
         createPlot(textPath)
 
         // createPlot(imageUtils.gradient())
-        // createPlot(pathUtils.voronoi())
+        createPlot(pathUtils.voronoi())
+        createPlot(pathUtils.voronoi())
 
     }, "100")
 

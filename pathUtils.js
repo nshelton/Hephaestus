@@ -516,7 +516,6 @@ PathUtils = function () {
         ty = 5000
         paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
         return paths
-
     }
 
     this.sierpinski = function () {
@@ -527,7 +526,6 @@ PathUtils = function () {
         tri = [[-0.5, 0], [0.5, 0], [0, sqrt32], [-0.5, 0]]
 
         function subdivide(pos, level) {
-
             var scale = 1 / Math.pow(2.0, level)
 
             if (level > 5) {
@@ -541,9 +539,7 @@ PathUtils = function () {
             subdivide([pos[0] + tri[2][0] * scale, pos[1] + tri[2][1] * scale], level + 1)
         }
 
-
         subdivide([0, 0], 1)
-
 
         var scale = 10000
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
@@ -553,8 +549,6 @@ PathUtils = function () {
 
         console.log(paths)
         return paths
-
-
     }
 
     this.cyrb128 = function (str) {
