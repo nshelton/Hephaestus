@@ -28,75 +28,56 @@ Optomizer = function () {
 
     this.optomize = function (paths) {
 
-        paths = paths.filter(p => p.length > 0)
+        paths = paths.filter( p => p.length > 0)
 
         score = this.getScore(paths)
         console.log(score)
 
-        var distance = function(a, b){
-            return Math.pow(a.x - b.x, 2) +  Math.pow(a.y - b.y, 2);
-          }
-          
-        pointsStart = paths.map((p, idx) => ({x:p[0][0], y:p[0][1], i:idx}))
-        pointsStart.shift()
-
-        // pointsEnd = paths.map((p, idx) => ({x:p[p.length-1][0], y:p[p.length-1][1], i:idx}))
-        // pointsEnd.shift()
         
-        console.log(pointsStart)
-
-        var treeStarts = new kdTree(pointsStart, distance, ["x", "y"]);
-        // var treeEnds = new kdTree(pointsEnd, distance, ["x", "y"]);
+        picked = paths.map( p => 0)
 
         reorderedPaths = [paths[0]]
+        picked[0] = 1
 
-        pathsConsumed = 1
-        
-        while (pathsConsumed < paths.length) {
-        // while (pathsConsumed < 10) {
-            
-            console.log(pathsConsumed, paths.length)
-            thisPath = reorderedPaths[reorderedPaths.length - 1]
+        while(reorderedPaths.length < paths.length) {
+            thisPath = reorderedPaths[reorderedPaths.length-1]
 
-            console.log(thisPath)
-            endOfPath = {
-                x:thisPath[thisPath.length - 1][0], 
-                y:thisPath[thisPath.length - 1][1]
+            bestPathIdx = 0
+            bestDistance = 1e10
+            bestPath = null
+
+            for(var i = 0;i < paths.length; i ++) {
+                if (picked[i] == 0) {
+                    //forward
+                    dx = Math.round(paths[i][0][0] - thisPath[thisPath.length-1][0])
+                    dy = Math.round(paths[i][0][1] - thisPath[thisPath.length-1][1])
+                    distance = Math.sqrt(dx * dx + dy * dy)
+
+                    if (distance < bestDistance) {
+                        bestPathIdx = i
+                        bestDistance = distance
+                        bestPath = paths[i]
+                    }
+
+                    //backward
+                    dx = Math.round(paths[i][paths[i].length-1][0] - thisPath[thisPath.length-1][0])
+                    dy = Math.round(paths[i][paths[i].length-1][1] - thisPath[thisPath.length-1][1])
+                    distance = Math.sqrt(dx * dx + dy * dy)
+
+                    if (distance < bestDistance) {
+                        bestPathIdx = i
+                        bestDistance = distance
+                        bestPath = paths[i].reverse()
+                    }
+                }
             }
 
-            closestStart = treeStarts.nearest(endOfPath, 1)[0]
-
-            // closestEnd = treeEnds.nearest(endOfPath, 2)
-            // closestEnd.sort((a,b) => a[1] - b[1])
-            // closestEnd = closestEnd[1]
-            distance = closestStart[1]
-            console.log(distance )
-            console.log(closestStart[0])
-            treeStarts.remove(closestStart[0])
-
-            bestIndex = closestStart[0].i
-            console.log("estindex", bestIndex)
-            bestPath = paths[bestIndex]
-
-            // if ( closestEnd < closestStart) {
-                // bestPath = paths[i].reverse()
-            // }
-
-            if (distance < 0.0001) {
-                reorderedPaths[reorderedPaths.length - 1] = thisPath.concat(bestPath.slice(1))
-
-            } else {
-                reorderedPaths.push(bestPath)
-            }
-
-            pathsConsumed ++;
-            // paths.splice(bestPathIdx, 1)
+            reorderedPaths.push( bestPath )
+            picked[bestPathIdx] = 1
         }
 
         newScore = this.getScore(reorderedPaths)
         console.log(newScore)
-
-
 
         return reorderedPaths
     }

@@ -46,7 +46,7 @@ async function plotPath(paths) {
 
     moveTo([0, 0])
     plotter.startTime = new Date()
-    //TODO: clean queue to remove the up / move 0 0 / down pattern
+
     console.log(queue)
 }
 
@@ -161,7 +161,6 @@ function init() {
         voronoi: function () { createPlot(pathUtils.voronoi()) },
         timestamp: function () { createPlot(pathUtils.timestamp()) },
         darkmode: function () { viewer.toggleColors() },
-
     };
 
     //load Settings
@@ -226,16 +225,21 @@ function init() {
             customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
         }
 
-        // textstring = new Date().toLocaleString()
-        textstring = + new Date()
+        textstring = new Date().toLocaleString()
+        // textstring = + new Date()
         var textPath = pathUtils.text(textstring + "")
          textPath.flat(2)
-        var textPath = pathUtils.transform(textPath, 0.5, 500, 1000)
+        var textPath = pathUtils.transform(textPath, 0.01, 50, 10)
         createPlot(textPath)
 
         // createPlot(imageUtils.gradient())
         createPlot(pathUtils.voronoi())
-        createPlot(pathUtils.voronoi())
+  
+
+        paths = viewer.createPlotList()
+        console.log(paths)
+        paths = optomizer.optomize(paths)
+        viewer.drawPlotterMovements(paths)
 
     }, "100")
 

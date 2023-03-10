@@ -11,9 +11,9 @@ THREE.InteractiveControls = function (camera, domElement) {
     this.a3Height = 420
     var box = this.domElement.getBoundingClientRect();
     this.aspect = box.height / box.width
+    this.zoom = 300
 
-    this.position = { x: this.a3Width / 2, y: this.a3Height / 2 };
-    this.zoom = 500
+    this.position = { x: this.zoom / 2, y: this.zoom / 2 };
     this.mouseDown = false;
     this.dragging = false;
     var _selectedObject = null
@@ -31,7 +31,7 @@ THREE.InteractiveControls = function (camera, domElement) {
         camera.right = this.position.x + this.zoom / 2
         camera.top = this.position.y - this.zoom / 2 * this.aspect
         camera.bottom = this.position.y + this.zoom / 2 * this.aspect
-        camera.position.set(0, 0, 100)
+        camera.position.set(0, 0, 10)
 
         camera.updateProjectionMatrix()
     }

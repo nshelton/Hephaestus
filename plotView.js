@@ -5,7 +5,7 @@ PlotViewer = function () {
     this.segments = []
 
     this.renderer = new THREE.WebGLRenderer({antialias:true});
-    this.camera = new THREE.OrthographicCamera(0, 500, 0, 500, 1, 10000);
+    this.camera = new THREE.OrthographicCamera(0, 100, 0, 100, 1, 100);
     this.controls = null;
     this.scene = new THREE.Scene();
     this.dragables = []
@@ -18,6 +18,10 @@ PlotViewer = function () {
     this.backgroundMaterial = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true });
     this.originmaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.5 });
     this.bbmaterial = new THREE.MeshBasicMaterial({ color: 0x88ff88, wireframe: true, transparent: true, opacity: 0.5 });
+    
+    this.upMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+    this.downMaterial = new THREE.LineBasicMaterial({ color: 0x880088 });
+    
     this.darkScheme = false
 
     this.toggleColors = function() {
@@ -185,12 +189,29 @@ PlotViewer = function () {
 
     }
 
+    this.drawPlotterMovements = function(paths) {
+        offset = 0
+        this.debugContainer = new THREE.Object3D()
+
+        points = []
+        paths.forEach(path => {
+            const pathpts = path.map(s => new THREE.Vector3(s[0]/100 + offset, s[1]/100 + offset, 2))
+            points = points.concat(pathpts)
+
+        })
+
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, this.upMaterial);
+        console.log(points)
+        this.debugContainer.add(line);
+        this.scene.add(this.debugContainer)
+    }
 
     this.CreatePaths = function (paths) {
         this.container = new THREE.Object3D()
 
         paths.forEach(path => {
-            const points = path.map(s => new THREE.Vector3(s[0] / 100, s[1] / 100, 0))
+            const points = path.map(s => new THREE.Vector3(s[0], s[1], 1))
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, this.yellowMaterial);
 

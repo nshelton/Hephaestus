@@ -617,7 +617,7 @@ PathUtils = function () {
             return val
         }
 
-        nPoints = 100
+        nPoints = 20
         points = []
         for (var i = 0; i < nPoints; i++) {
             p = [gauss(), gauss()]
@@ -687,10 +687,10 @@ PathUtils = function () {
         )
 
 
-        var scale = 5000
+        var scale = 80
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
-        tx = 5500
-        ty = 8000
+        tx = 85
+        ty = 110
         paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
 
         console.log(paths)

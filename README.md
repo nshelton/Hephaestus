@@ -4,7 +4,7 @@
 
 
 control Axidraw over Web Serial API. 
- - Drag and drop svg to the browser 
+
  - Render in THREE.js for performance
   - align and scale to primt area
 -  FIFO queue in borwser for pause/resume
@@ -16,5 +16,5 @@ Todo:
  - use MVC 
   - interactive path updates from simulations
  - better line rendering ?!
- 
+  - maybe support more svg tags but i dont really carea bout svg anymore
   
