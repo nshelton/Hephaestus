@@ -14,7 +14,7 @@ PlotViewer = function () {
     this.outlineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
     this.yellowMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: false });
-    this.reddishMaterial = new THREE.MeshBasicMaterial({ color: 0xe61d5f, wireframe: false });
+    this.reddishMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false });
     this.backgroundMaterial = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true });
     this.originmaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.5 });
     this.bbmaterial = new THREE.MeshBasicMaterial({ color: 0x88ff88, wireframe: true, transparent: true, opacity: 0.5 });
@@ -201,10 +201,17 @@ PlotViewer = function () {
             line = new THREE.Line(geometry, this.downMaterial);
             this.debugContainer.add(line);
 
-
-            pathpts.unshift(lastpos)
-            points = points.concat(pathpts)
-            geometry = new THREE.BufferGeometry().setFromPoints(pathpts);
+            const sphereGeo = new THREE.SphereGeometry(1, 4, 4);
+            var upBall = new THREE.Mesh(sphereGeo, this.reddishMaterial);
+            upBall.position.set(path[0][0]/ 100, path[0][1]/ 100, 0)
+            this.debugContainer.add(upBall)
+            
+            
+            // var upBall = new THREE.Mesh(sphereGeo, this.yellowMaterial);
+            // upBall.position.set(lastpos[0]/ 100, lastpos[1]/ 100, 0)
+            // this.debugContainer.add(upBall)
+            // points = points.concat(pathpts)
+            geometry = new THREE.BufferGeometry().setFromPoints([lastpos, pathpts[0]]);
             line = new THREE.Line(geometry, this.upMaterial);
             this.debugContainer.add(line);
             lastpos = pathpts[pathpts.length - 1]
@@ -223,7 +230,7 @@ PlotViewer = function () {
             const line = new THREE.Line(geometry, this.yellowMaterial);
 
             this.lineObjects.push(line)
-            this.container.add(line);
+            this.container.add(line)
             this.segments.push(points)
         })
 

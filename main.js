@@ -110,7 +110,8 @@ function loadImage(file) {
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
         var pix = imgd.data;
 
-        createPlot(imageUtils.hatch(pix, data.width, data.height, optomizer))
+        // createPlot(imageUtils.hatch(pix, data.width, data.height, optomizer))
+        createPlot(imageUtils.dither(pix, data.width, data.height))
 
     })
 
@@ -230,16 +231,34 @@ function init() {
         var textPath = pathUtils.text(textstring + "")
          textPath.flat(2)
         var textPath = pathUtils.transform(textPath, 0.01, 50, 10)
-        createPlot(textPath)
+        // createPlot(textPath)
+
+        var squares = []
+
+        for (var x = 0; x < 3; x ++) {
+            for (var y = 0; y < 3; y ++) {
+                squares.push(pathUtils.rectPath( 50 + x*30, 50 + y*30, 25, 25))
+            }
+        }
+
+        // console.log(textPath)
+        // console.log(squares)
+
+        // createPlot(squares)
 
         // createPlot(imageUtils.gradient())
-        createPlot(pathUtils.voronoi())
+        // createPlot(pathUtils.voronoi())
   
 
-        paths = viewer.createPlotList()
-        console.log(paths)
-        paths = optomizer.optomize(paths)
-        viewer.drawPlotterMovements(paths)
+        // paths = viewer.createPlotList()
+        // console.log(paths)
+        // paths0 = optomizer.optomize(paths)
+        // paths1 = optomizer.optomizeSlow(paths)
+        // // viewer.drawPlotterMovements(paths1)
+        // viewer.drawPlotterMovements(paths0)
+
+        // paths = optomizer.kdTreeTest(paths)
+
 
     }, "100")
 

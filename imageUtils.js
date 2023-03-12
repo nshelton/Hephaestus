@@ -178,8 +178,8 @@ imageUtils = function () {
             // val = bitmap[i + 2] * 3
             val = luma(bitmap[i], bitmap[i + 1], bitmap[i + 2])
             // val = 255 - cmyk[2]
-            // val *= bitmap[i + 3] / 255
-
+            // val *= bitmap[i + 3]  
+            
             grayscale.push(val)
         }
 
@@ -189,7 +189,7 @@ imageUtils = function () {
         }
 
         points = []
-        const nPoints = 20000
+        const nPoints = 10000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -322,7 +322,7 @@ imageUtils = function () {
 
         paths = paths.map(path => path.map(p => [p[1], p[0]]))
 
-        paths = pathUtils.transform(paths, 40, 1000, 1000)
+        paths = pathUtils.transform(paths, 2, 0, 0)
 
         return paths
     }
@@ -339,7 +339,7 @@ imageUtils = function () {
         }
 
         console.log(paths)
-        paths = pathUtils.transform(paths, 200, 1000, 8000)
+        paths = pathUtils.transform(paths, 200, 0, 0)
         return paths
     }
 

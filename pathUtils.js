@@ -579,7 +579,8 @@ PathUtils = function () {
     }
 
     // Only one 32-bit component hash is needed for mulberry32.
-    this.rand = function () { return this.mulberry32(this.cyrb128("mouse")[0]) };
+    this.seed = new Date().toTimeString()
+    this.rand = function () { return this.mulberry32(this.cyrb128(this.seed)[0]) };
 
     this.voronoi = function () {
 
@@ -631,9 +632,9 @@ PathUtils = function () {
         sites = points.map(p => { return { x: p[0], y: p[1] } })
         diagram = voronoi.compute(sites, bbox);
 
-        // diagram.edges.forEach(edge => {
-        //    paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
-        // });
+        diagram.edges.forEach(edge => {
+           paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
+        });
 
         //   diagram.edges.forEach(edge => {
         //     if (edge.lSite != null && edge.rSite != null) {
@@ -670,21 +671,21 @@ PathUtils = function () {
             return result
         }
 
-        paths = paths.concat(
-            diagram.cells.map(cell => {
-                var outline = getOutline(cell, 0)
+        // paths = paths.concat(
+        //     diagram.cells.map(cell => {
+        //         var outline = getOutline(cell, 0)
 
-                for (let i = 0; i < 3; i++) {
-                    outline = subdivide(outline)
-                }
+        //         for (let i = 0; i < 3; i++) {
+        //             outline = subdivide(outline)
+        //         }
 
-                for (let i = 0; i < 100; i++) {
-                    outline = smooth(outline, 0.5)
-                }
+        //         for (let i = 0; i < 100; i++) {
+        //             outline = smooth(outline, 0.5)
+        //         }
 
-                return outline.map(p => [p.x, p.y])
-            })
-        )
+        //         return outline.map(p => [p.x, p.y])
+        //     })
+        // )
 
 
         var scale = 80
