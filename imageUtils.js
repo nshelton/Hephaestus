@@ -189,7 +189,8 @@ imageUtils = function () {
         }
 
         points = []
-        const nPoints = 4000
+
+        const nPoints = 10000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -322,7 +323,7 @@ imageUtils = function () {
 
         paths = paths.map(path => path.map(p => [p[1], p[0]]))
 
-        paths = pathUtils.transform(paths, 4, 0, 0)
+        paths = pathUtils.transform(paths, 2, 0, 0)
 
         return paths
     }
@@ -368,6 +369,7 @@ imageUtils = function () {
         }
         console.log(paths)
         paths = pathUtils.transform(paths, 2, x, y)
+
         return paths
     }
 

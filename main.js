@@ -234,16 +234,26 @@ function init() {
         textPath.flat(2)
         var textPath = pathUtils.transform(textPath, 0.006, 50, 10)
         createPlot(textPath)
+         textPath.flat(2)
+        var textPath = pathUtils.transform(textPath, 0.01, 50, 10)
+        // createPlot(textPath)
+
+        var squares = []
+
+        for (var x = 0; x < 3; x ++) {
+            for (var y = 0; y < 3; y ++) {
+                squares.push(pathUtils.rectPath( 50 + x*30, 50 + y*30, 25, 25))
+            }
+        }
+
+        // console.log(textPath)
+        // console.log(squares)
+
+
 
         // // createPlot(imageUtils.star())
         // createPlot(imageUtils.gradient())
-        // createPlot(imageUtils.randomGradient())
-        // // createPlot(pathUtils.voronoi())
 
-        // paths = viewer.createPlotList()
-        // console.log(paths)
-        // paths = optomizer.optomize(paths)
-        // viewer.drawPlotterMovements(paths)
 
     }, "100")
 
