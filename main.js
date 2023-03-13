@@ -110,7 +110,8 @@ function loadImage(file) {
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
         var pix = imgd.data;
 
-        createPlot(imageUtils.hatch(pix, data.width, data.height, optomizer))
+        // createPlot(imageUtils.hatch(pix, data.width, data.height, optomizer))
+        createPlot(imageUtils.dither(pix, data.width, data.height))
 
     })
 
@@ -225,21 +226,24 @@ function init() {
             customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
         }
 
-        textstring = new Date().toLocaleString()
-        // textstring = + new Date()
+        textstring = new Date().toLocaleString().split(",")[0]
+        textstring = textstring.replace("2023", "23")
+        textstring += " "
+        textstring += + new Date()
         var textPath = pathUtils.text(textstring + "")
-         textPath.flat(2)
-        var textPath = pathUtils.transform(textPath, 0.01, 50, 10)
+        textPath.flat(2)
+        var textPath = pathUtils.transform(textPath, 0.006, 50, 10)
         createPlot(textPath)
 
+        // // createPlot(imageUtils.star())
         // createPlot(imageUtils.gradient())
-        createPlot(pathUtils.voronoi())
-  
+        // createPlot(imageUtils.randomGradient())
+        // // createPlot(pathUtils.voronoi())
 
-        paths = viewer.createPlotList()
-        console.log(paths)
-        paths = optomizer.optomize(paths)
-        viewer.drawPlotterMovements(paths)
+        // paths = viewer.createPlotList()
+        // console.log(paths)
+        // paths = optomizer.optomize(paths)
+        // viewer.drawPlotterMovements(paths)
 
     }, "100")
 

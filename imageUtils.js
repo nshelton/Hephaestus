@@ -48,7 +48,7 @@ imageUtils = function () {
 
             return [c, m, y, K]
         }
-        function luma(r, g, b) { return 0.2126 * r + 0.7152 * g + 0.0722 * b  }
+        function luma(r, g, b) { return 0.2126 * r + 0.7152 * g + 0.0722 * b }
         grayscale = []
 
         for (var i = 0; i < bitmap.length; i += 4) {
@@ -57,28 +57,28 @@ imageUtils = function () {
             grayscale.push(val)
         }
         bands = 50
-        paths = [[],[],[],[]]
+        paths = [[], [], [], []]
         skip = 1
-        for (var x = 0; x < w; x +=skip) {
+        for (var x = 0; x < w; x += skip) {
             console.log(x / w)
-            for (var y = 0; y < h; y +=skip) {
-                let px = getPixel([x,y])
+            for (var y = 0; y < h; y += skip) {
+                let px = getPixel([x, y])
 
-                if (px <  bands * 3) {
-                    paths[0].push([[x,y], [x+skip, y+skip]])
+                if (px < bands * 3) {
+                    paths[0].push([[x, y], [x + skip, y + skip]])
                 }
-                if (px <  bands * 4) {
-                    paths[1].push([[x+skip,y], [x, y+skip]])
+                if (px < bands * 4) {
+                    paths[1].push([[x + skip, y], [x, y + skip]])
                 }
                 if (px < bands * 1) {
-                    paths[2].push([[x,y], [x+skip, y]])
+                    paths[2].push([[x, y], [x + skip, y]])
                 }
                 if (px < bands * 2) {
-                    paths[3].push([[x,y], [x, y+skip]])
+                    paths[3].push([[x, y], [x, y + skip]])
                 }
             }
         }
-        
+
         paths = paths.map(p => optomizer.optomize(p)).flat(1)
         paths = pathUtils.transform(paths, 40, 1000, 1000)
 
@@ -165,10 +165,10 @@ imageUtils = function () {
 
             return [c, m, y, K]
         }
-        function luma(r, g, b) { return 0.2126 * r + 0.7152 * g + 0.0722 * b  }
+        function luma(r, g, b) { return 0.2126 * r + 0.7152 * g + 0.0722 * b }
 
         grayscale = []
- 
+
         for (var i = 0; i < bitmap.length; i += 4) {
 
             val = bitmap[i] + bitmap[i + 1] + bitmap[i + 2]
@@ -178,7 +178,7 @@ imageUtils = function () {
             // val = bitmap[i + 2] * 3
             val = luma(bitmap[i], bitmap[i + 1], bitmap[i + 2])
             // val = 255 - cmyk[2]
-            // val *= bitmap[i + 3] / 255
+            // val *= bitmap[i + 3]  
 
             grayscale.push(val)
         }
@@ -189,7 +189,7 @@ imageUtils = function () {
         }
 
         points = []
-        const nPoints = 20000
+        const nPoints = 4000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -261,7 +261,7 @@ imageUtils = function () {
             console.log(ii)
             bbox = getBbox(points)
             // if (ii <10) {
-            if (ii % 5  == 0) {
+            if (ii % 5 == 0) {
                 diagram = voronoi.compute(points, bbox);
                 points = diagram.cells.map((cell) => ({ x: cell.site.x, y: cell.site.y }))
                 centroids = diagram.cells.map(cell => getCentroid(cell));
@@ -287,7 +287,7 @@ imageUtils = function () {
         //         return getOutline(cell, 0.1).map(p => [p.x, p.y])
         //     })
         // )
-        
+
         // voronoi
         // diagram.edges.forEach(edge => {
         //     paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
@@ -322,24 +322,52 @@ imageUtils = function () {
 
         paths = paths.map(path => path.map(p => [p[1], p[0]]))
 
-        paths = pathUtils.transform(paths, 40, 1000, 1000)
+        paths = pathUtils.transform(paths, 4, 0, 0)
 
         return paths
     }
 
-    this.gradient = function () {
+    this.star = function () {
+        paths = []
+        nLines = 50
+        r = 20
+        for (var i = 0; i < nLines; i++) {
+            theta = Math.PI * i / nLines
+            x = r * Math.cos(theta)
+            y = r * Math.sin(theta)
+            paths.push([[x, y], [-x, -y]])
+        }
+
+        // paths = pathUtils.transform(paths, 2, 50 + 20, 130 + 10 * (Math.sqrt(3) / 2))
+        paths = pathUtils.transform(paths, 2, 50 + 20, 50)
+        // paths = pathUtils.transform(paths, 2, 50, 50)
+        return paths
+    }
+
+    this.randomGradient = function () {
+        return this.gradient(Math.random() * 100, Math.random() * 100, Math.random() * 100, Math.random() * 20)
+    }
+
+
+    this.gradient = function (x=0, y=0, w=10, h=50 ) {
         paths = []
         const nLines = 100
         var x = 0
+        phase = Math.random() * 2 * Math.PI
+        scale = Math.random()
 
         for (var i = 0; i < nLines; i++) {
-            ii = nLines - i
-            x += ii * ii / 5000
-            paths.push([[x + 10 * (Math.sqrt(3) / 2), 0], [x, 10]])
-        }
+            // ii = nLines - i
+            // x = ii * ii / 5000
+            x = i / nLines * h
+            // x += Math.sin(Math.PI * 4 * i / nLines + phase) * 5 * scale
+            x += Math.sin(-Math.PI * i/nLines) * 10
 
+            // paths.push([[x - 10 * (Math.sqrt(3) / 2), 0], [x, 10]])
+            paths.push([[x, 0], [x, w]])
+        }
         console.log(paths)
-        paths = pathUtils.transform(paths, 200, 1000, 8000)
+        paths = pathUtils.transform(paths, 2, x, y)
         return paths
     }
 

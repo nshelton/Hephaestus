@@ -31,7 +31,7 @@ PathUtils = function () {
         var n = 13
         var c = c1 = c2 = c2x = c2y = x = y = 0, d = 1, n = 1 << n;
         x = y = 0
-        var scale = 200
+        var scale = 1
         var hsh = 0
         var vsh = 0
         path = []
@@ -45,7 +45,7 @@ PathUtils = function () {
         }
         console.log(path)
 
-        return (path)
+        return ([path])
     }
 
     this.createGridFromPoints = function (points) {
