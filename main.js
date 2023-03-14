@@ -98,6 +98,7 @@ function removeAllChildNodes(parent) {
 }
 
 function loadImage(file) {
+  
     createImageBitmap(file).then(data => {
 
         const canvas = new OffscreenCanvas(data.width, data.height);
@@ -110,8 +111,8 @@ function loadImage(file) {
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
         var pix = imgd.data;
 
-        // createPlot(imageUtils.hatch(pix, data.width, data.height, optomizer))
-        createPlot(imageUtils.dither(pix, data.width, data.height))
+        createPlot(imageUtils.hatch(pix, data.width, data.height, optomizer))
+        // createPlot(imageUtils.dither(pix, data.width, data.height))
 
     })
 
@@ -251,9 +252,17 @@ function init() {
 
 
 
-        // // createPlot(imageUtils.star())
-        // createPlot(imageUtils.gradient())
+        // createPlot(imageUtils.star())
+        // image = imageUtils.createImage()
+        // createPlot(imageUtils.dither(image.data, image.width, image.height))
+  
 
+        // paths = viewer.createPlotList()
+        // console.log(paths)
+        // paths1 = optomizer.optomizeKD(paths)
+        // // paths1 = optomizer.optomizeGrid(paths)
+
+        // viewer.drawPlotterMovements(paths1)
 
     }, "100")
 

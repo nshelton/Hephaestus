@@ -82,7 +82,64 @@ Optomizer = function () {
         return reorderedPaths
     }
 
-    this.optomize = function (paths) {
+
+    this.optomizeGrid = function (paths) {
+        paths = paths.filter(p => p.length > 0)
+
+        score = this.getScore(paths)
+        console.log(score)
+
+        picked = paths.map(p => 0)
+
+        reorderedPaths = [paths[0]]
+        picked[0] = 1
+
+        while (reorderedPaths.length < paths.length) {
+            thisPath = reorderedPaths[reorderedPaths.length - 1]
+
+            bestPathIdx = 0
+            bestDistance = 1e10
+            bestPath = null
+
+            for (var i = 0; i < paths.length; i++) {
+                if (picked[i] == 0) {
+                    //forward
+                    dx = Math.round(paths[i][0][0] - thisPath[thisPath.length - 1][0])
+                    dy = Math.round(paths[i][0][1] - thisPath[thisPath.length - 1][1])
+                    distance = Math.sqrt(dx * dx + dy * dy)
+
+                    if (distance < bestDistance) {
+                        bestPathIdx = i
+                        bestDistance = distance
+                        bestPath = paths[i]
+                    }
+
+                    //backward
+                    dx = Math.round(paths[i][paths[i].length - 1][0] - thisPath[thisPath.length - 1][0])
+                    dy = Math.round(paths[i][paths[i].length - 1][1] - thisPath[thisPath.length - 1][1])
+                    distance = Math.sqrt(dx * dx + dy * dy)
+
+                    if (distance < bestDistance) {
+                        bestPathIdx = i
+                        bestDistance = distance
+                        bestPath = paths[i].reverse()
+                    }
+                }
+            }
+
+            reorderedPaths.push(bestPath)
+            picked[bestPathIdx] = 1
+        }
+
+        newScore = this.getScore(reorderedPaths)
+        console.log(newScore)
+
+        return reorderedPaths
+
+    }
+
+
+    this.optomizeKD = function (paths) {
 
         paths = paths.filter(p => p.length > 0)
 

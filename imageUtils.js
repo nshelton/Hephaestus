@@ -1,19 +1,63 @@
 imageUtils = function () {
 
+    this.createImage = function () {
+        img = []
+        w = 100
+        h = 100
+        for (var y = 0; y < h; y++) {
+            for (var x = 0; x < w; x++) {
+                u = y / h - 0.5
+                v = x / w - 0.5
+                t = Math.sin(50 * (u * u + v * v) + 15) * 0.5 + 0.5
+
+                t = Math.pow(t, 0.2)
+
+                img.push(t * 255)
+                img.push(t * 255)
+                img.push(t * 255)
+                img.push(t * 255)
+            }
+        }
+        return {
+            data: img,
+            width: w,
+            height: h
+        }
+    }
+
     pathUtils = new PathUtils()
+
+    this.lines = function (imgElement) {
+        console.log(imgElement)
+        let mat = cv.imread(imgElement);
+        console.log(mat)
+        rho = 1  // distance resolution in pixels of the Hough grid
+        theta = Math.PI / 180  // angular resolution in radians of the Hough grid
+        threshold = 15  // minimum number of votes (intersections in Hough grid cell)
+        min_line_length = 50  // minimum number of pixels making up a line
+        max_line_gap = 20  // maximum gap in pixels between connectable line segments
+
+        lines = cv2.HoughLinesP(mat, rho, theta, threshold, [],
+            min_line_length, max_line_gap)
+
+
+        console.log(lines)
+        return []
+    }
 
     this.downsample = function (bitmap, w, h) {
         result = []
-        for (var x = 0; x < w; x++) {
-            for (var y = 0; y < h; y++) {
-                if (grayscale[x + y * w] < 100) {
-                    paths.push([[x, y], [x, y + 1]])
-                }
+        for (var x = 0; x < w; x += 2) {
+            for (var y = 0; y < h; y += 2) {
+                val = bitmap[x + y * w] + bitmap[(x + 1) + y * w]
+                val += bitmap[x + (y + 1) * w] + bitmap[(x + 1) + (y + 1) * w]
+                result[x / 2 + y / 2 * w / 2] = val / 4
             }
         }
-        result
+        return result
     }
     this.hatch = function (bitmap, w, h, optomizer) {
+        console.log(w, h)
         function shuffle(array) {
             let currentIndex = array.length, randomIndex;
 
@@ -31,9 +75,9 @@ imageUtils = function () {
 
             return array;
         }
-        function getPixel(p) {
-            return grayscale[(Math.round(p[0]) + Math.round(p[1]) * w)]
-        }
+
+
+
         function rbg2cmyk(r, g, b) {
             /* calculate complementary colors */
             c = 255 - r;
@@ -51,36 +95,53 @@ imageUtils = function () {
         function luma(r, g, b) { return 0.2126 * r + 0.7152 * g + 0.0722 * b }
         grayscale = []
 
+
+
         for (var i = 0; i < bitmap.length; i += 4) {
-            val = bitmap[i] + bitmap[i + 1] + bitmap[i + 2]
+            // val = bitmap[i] + bitmap[i + 1] + bitmap[i + 2]
             val = luma(bitmap[i], bitmap[i + 1], bitmap[i + 2])
             grayscale.push(val)
         }
+
+        console.log(w, h)
+
+        grayscale = this.downsample(grayscale, w, h)
+
+        w /= 2
+        h /= 2
+
+        function getPixel(p) {
+            return grayscale[(Math.round(p[0]) + Math.round(p[1]) * w)]
+        }
+        console.log(w, h)
+
         bands = 50
         paths = [[], [], [], []]
-        skip = 1
+        skip = 2
+
         for (var x = 0; x < w; x += skip) {
             console.log(x / w)
             for (var y = 0; y < h; y += skip) {
                 let px = getPixel([x, y])
 
-                if (px < bands * 3) {
+                if (px < Math.random() * 256) {
                     paths[0].push([[x, y], [x + skip, y + skip]])
                 }
-                if (px < bands * 4) {
+                if (px < Math.random() * 256) {
                     paths[1].push([[x + skip, y], [x, y + skip]])
                 }
-                if (px < bands * 1) {
+                if (px < Math.random() * 256) {
                     paths[2].push([[x, y], [x + skip, y]])
                 }
-                if (px < bands * 2) {
+                if (px < Math.random() * 256) {
                     paths[3].push([[x, y], [x, y + skip]])
                 }
             }
         }
 
-        paths = paths.map(p => optomizer.optomize(p)).flat(1)
-        paths = pathUtils.transform(paths, 40, 1000, 1000)
+        // paths = paths.map(p => optomizer.optomizeKD(p)).flat(1)
+        paths = paths.flat(1)
+        paths = pathUtils.transform(paths, 1, 0, 0)
 
         paths = shuffle(paths)
         paths = paths.splice(0, paths.length - 1000)
@@ -190,7 +251,7 @@ imageUtils = function () {
 
         points = []
 
-        const nPoints = 10000
+        const nPoints = 2000
 
         while (points.length < nPoints) {
             var x = Math.random() * w
@@ -279,8 +340,12 @@ imageUtils = function () {
                 points[j] = add(points[j], dir)
                 // points[j] = add(points[j], { x: Math.random(), y: Math.random() })
             }
+
+            points = points.map(p => ({ x: Math.max(0, p.x), y: Math.max(0, p.y) }))
+            points = points.map(p => ({ x: Math.min(w, p.x), y: Math.min(h, p.y) }))
         }
 
+        bbox = getBbox(points)
         diagram = voronoi.compute(points, bbox);
 
         // paths = paths.concat(
@@ -350,7 +415,7 @@ imageUtils = function () {
     }
 
 
-    this.gradient = function (x=0, y=0, w=10, h=50 ) {
+    this.gradient = function (x = 0, y = 0, w = 10, h = 50) {
         paths = []
         const nLines = 100
         var x = 0
@@ -362,7 +427,7 @@ imageUtils = function () {
             // x = ii * ii / 5000
             x = i / nLines * h
             // x += Math.sin(Math.PI * 4 * i / nLines + phase) * 5 * scale
-            x += Math.sin(-Math.PI * i/nLines) * 10
+            x += Math.sin(-Math.PI * i / nLines) * 10
 
             // paths.push([[x - 10 * (Math.sqrt(3) / 2), 0], [x, 10]])
             paths.push([[x, 0], [x, w]])
