@@ -135,7 +135,6 @@ Optomizer = function () {
         console.log(newScore)
 
         return reorderedPaths
-
     }
 
 

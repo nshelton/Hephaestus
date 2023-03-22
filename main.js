@@ -31,7 +31,7 @@ function moveTo(p) {
 async function plotPath(paths) {
 
     console.log(paths)
-    paths = optomizer.optomize(paths)
+    paths = optomizer.optomizeKD(paths)
 
     paths = paths.filter(p => p.length > 0)
     paths.forEach(path => {
@@ -111,7 +111,9 @@ function loadImage(file) {
         var imgd = ctx.getImageData(0, 0, data.width, data.height);
         var pix = imgd.data;
 
-        createPlot(imageUtils.hatch(pix, data.width, data.height, optomizer))
+        paths = imageUtils.hatch(pix, data.width, data.height, optomizer)
+        paths = paths.map(path => path.map(p => [p[1], p[0]]))
+        createPlot(paths)
         // createPlot(imageUtils.dither(pix, data.width, data.height))
 
     })

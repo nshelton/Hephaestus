@@ -117,35 +117,36 @@ imageUtils = function () {
 
         bands = 50
         paths = [[], [], [], []]
-        skip = 2
+        skip = 1
 
         for (var x = 0; x < w; x += skip) {
             console.log(x / w)
             for (var y = 0; y < h; y += skip) {
                 let px = getPixel([x, y])
 
-                if (px < Math.random() * 256) {
+                if (px < bands * 1) {
                     paths[0].push([[x, y], [x + skip, y + skip]])
                 }
-                if (px < Math.random() * 256) {
+                if (px < bands * 2) {
                     paths[1].push([[x + skip, y], [x, y + skip]])
                 }
-                if (px < Math.random() * 256) {
+                if (px < bands * 3) {
                     paths[2].push([[x, y], [x + skip, y]])
                 }
-                if (px < Math.random() * 256) {
+                if (px < bands * 4) {
                     paths[3].push([[x, y], [x, y + skip]])
                 }
             }
         }
+        console.log(paths)
+        paths = paths.map(p => optomizer.optomizeKD(p)).flat(1)
+        // paths = paths.flat(1)
 
-        // paths = paths.map(p => optomizer.optomizeKD(p)).flat(1)
-        paths = paths.flat(1)
-        paths = pathUtils.transform(paths, 1, 0, 0)
+        paths = pathUtils.transform(paths, 0.3, 0, 0)
 
-        paths = shuffle(paths)
-        paths = paths.splice(0, paths.length - 1000)
-        paths
+        // paths = shuffle(paths)
+        // paths = paths.splice(0, paths.length - 1000)
+        // paths
         return paths
 
     }
