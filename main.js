@@ -10,6 +10,7 @@ var queue = []
 plotterPos = [0, 0]
 paused = false
 
+
 currentPlotObjects = []
 
 function createPlot(paths) {
@@ -63,22 +64,24 @@ async function readStatus() {
 
 async function consumeQueue() {
 
-    console.log("update", queue.length, plotter.commandsSent, plotter.commandsCompleted)
-    if (!paused) {
+    if (paused) 
+    return;
 
-        if (plotter.commandsSent - plotter.commandsCompleted < 100) {
-            for (var i = 0; i < 100; i++) {
-                if (queue.length > 0) {
-                    var next = queue.shift()
-                    if (next) {
-                        customGui.update(queue, plotter);
-                        switch (next[0]) {
-                            case "move": await plotter.move(next[1], next[2]); break;
-                            case "up": await plotter.penUp(); break;
-                            case "down": await plotter.penDown(); break;
-                            case "query": await plotter.query(); break;
-                        }
-                    }
+    if (plotter.commandsSent - plotter.commandsCompleted >= 100) 
+    return;
+
+    console.log("update", queue.length, plotter.commandsSent, plotter.commandsCompleted)
+
+    for (var i = 0; i < 100; i++) {
+        if (queue.length > 0) {
+            var next = queue.shift()
+            if (next) {
+                customGui.update(queue, plotter);
+                switch (next[0]) {
+                    case "move": await plotter.move(next[1], next[2]); break;
+                    case "up": await plotter.penUp(); break;
+                    case "down": await plotter.penDown(); break;
+                    case "query": await plotter.query(); break;
                 }
             }
         }
@@ -131,6 +134,73 @@ function loadSVG(file) {
     });
 }
 
+
+async function readFileContents(file) {
+    try {
+      const fileContents = await file.text();
+      return JSON.parse(fileContents); // Parse JSON text into an object
+    } catch (error) {
+      console.error(`Error reading file ${file.name}:`, error);
+      return null; // Return null if there's an error reading the file
+    }
+}
+
+const LoadFileEntry = async (entry) => {
+    console.log(entry)
+    const file = await entry.getFile();
+    const contents = await readFileContents(file);
+    console.log(contents)
+
+    if (contents.paths) {
+        viewer.ClearAll()
+        contents.paths.forEach( path => createPlot(path))
+    }
+
+}
+
+const printFilesInDirectory = async (element, mouseEvent) => {
+    const explorer_node = document.getElementById("explorer");
+    const directoryHandle = await window.showDirectoryPicker();
+    for await (const entry of directoryHandle.values()) {
+        if (entry.kind === 'file') {
+
+            project_name = entry.name.split(".")[0]
+            if (!entry.name.endsWith("json")) continue;
+            var projectEntry = document.createElement("div")
+            var projectEntryTitle = document.createElement("h1")
+            var projectEntryInfo = document.createElement("span")
+            projectEntry.appendChild(projectEntryTitle)
+            projectEntry.appendChild(projectEntryInfo)
+
+            projectEntry.classList.add('explorerEntry')
+            projectEntryTitle.innerText = project_name
+
+            const file = await entry.getFile();
+            const contents = await readFileContents(file);
+            console.log(contents)
+            console.log(contents.timestamp)
+            time = contents.timestamp | "Notime"
+            console.log(time)
+            projectEntryInfo.innerHTML = contents.timestamp + "<br>"
+            projectEntryInfo.innerHTML += "<ul>"
+            contents.paths.forEach( p => {
+                total = p.reduce((acc, current) =>  current.length + acc, 0)
+                projectEntryInfo.innerHTML += "<li>" + total + " verts " + p.length + " lines </li><br>"
+            })
+
+            projectEntryInfo.innerHTML += "</ul>"
+            
+            explorer_node.appendChild(projectEntry)
+
+            projectEntry.addEventListener("click", function(e){
+                LoadFileEntry(entry)
+            })
+        }
+    }
+  
+    document.removeEventListener("click", printFilesInDirectory);// Add onclick eventListener 
+};
+
 function dropHandler(ev) {
     console.log('File(s) dropped');
     ev.preventDefault();
@@ -150,7 +220,54 @@ function dropHandler(ev) {
 
 function dragOverHandler(ev) { ev.preventDefault(); }
 
+function saveCurrentToDB() {
+    const date = new Date()
+    date_time_string = date.toLocaleDateString() + " " + date.toLocaleTimeString()
+    
+    data_to_save = {
+        "paths" : currentPlotObjects,
+        "timestamp" : date_time_string,
+        "thumbnail"  : []
+    }
+
+    var fileContent = JSON.stringify(data_to_save, function(key, val) {
+        return val.toFixed ? Number(val.toFixed(3)) : val;
+    })
+    
+    var bb = new Blob([fileContent ], { type: 'text/plain' });
+    var a = document.createElement('a');
+    a.download = 'download.json';
+    a.href = window.URL.createObjectURL(bb);
+    a.click();
+}
+
+function setupDragExplorer() {
+    const explorer_node = document.getElementById("explorer");
+    const gui_node = document.getElementById("gui");
+
+    const BORDER_SIZE = 20;
+    let m_pos;
+    function resize(e){
+        explorer_node.style.width = e.x + "px";
+        gui_node.style.left = e.x + "px";
+    }
+
+    explorer_node.addEventListener("mousedown", function(e){
+        currentWidth = parseInt(getComputedStyle(explorer_node, '').width) 
+        if (Math.abs(e.offsetX - currentWidth) < BORDER_SIZE) {
+            document.addEventListener("mousemove", resize, false);
+        }
+    }, false);
+
+    document.addEventListener("mouseup", function(){
+        document.removeEventListener("mousemove", resize, false);
+    }, false);
+}
+
 function init() {
+    setupDragExplorer()
+    document.addEventListener("click", printFilesInDirectory , false);// Add onclick eventListener 
+
     var guiParams = {
 
         grid: function () { createPlot(pathUtils.gridTest()) },
@@ -165,6 +282,7 @@ function init() {
         voronoi: function () { createPlot(pathUtils.voronoi()) },
         timestamp: function () { createPlot(pathUtils.timestamp()) },
         darkmode: function () { viewer.toggleColors() },
+        saveCurrentToDB : function() {saveCurrentToDB()}
     };
 
     //load Settings
@@ -182,6 +300,7 @@ function init() {
     gui.add(guiParams, 'sierpinski')
     gui.add(guiParams, 'voronoi')
     gui.add(guiParams, 'darkmode')
+    gui.add(guiParams, 'saveCurrentToDB')
 
     app = {
         plot: plotCurrent,
@@ -208,7 +327,6 @@ function init() {
             plotter.speed = val;
             saveSettings("speed", val)
         }
-
     }
 
     viewer.setupScene()

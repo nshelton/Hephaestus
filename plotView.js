@@ -23,6 +23,8 @@ PlotViewer = function () {
     this.downMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
     this.darkScheme = false
+    this.plotContainers = new THREE.Object3D()
+    this.scene.add(this.plotContainers)
 
     this.toggleColors = function () {
         this.darkScheme = !this.darkScheme
@@ -221,8 +223,29 @@ PlotViewer = function () {
         this.scene.add(this.debugContainer)
     }
 
+    this.ClearAll = function() {
+        for( var i = this.plotContainers.children.length - 1; i >= 0; i--) { 
+            obj = this.plotContainers.children[i];
+            this.plotContainers.remove(obj); 
+       }
+
+       this.lineObjects = []
+       this.segments = []
+
+       this.dragables.forEach( d => {
+
+        this.scene.remove(d.originDot)
+        this.scene.remove(d.scaleWidget)
+
+        this.controls.unregisterObject(d.originDot)
+        this.controls.unregisterObject(d.boundingBox)
+        this.controls.unregisterObject(d.scaleWidget)
+       })
+
+    }
+
     this.CreatePaths = function (paths) {
-        this.container = new THREE.Object3D()
+        var pathContainer = new THREE.Object3D()
 
         paths.forEach(path => {
             const points = path.map(s => new THREE.Vector3(s[0], s[1], 1))
@@ -230,12 +253,12 @@ PlotViewer = function () {
             const line = new THREE.Line(geometry, this.yellowMaterial);
 
             this.lineObjects.push(line)
-            this.container.add(line)
+            pathContainer.add(line)
             this.segments.push(points)
         })
 
-        this.scene.add(this.container)
-        this.addDragNDrop(this.container)
+        this.plotContainers.add(pathContainer)
+        this.addDragNDrop(pathContainer)
     }
 
     this.setupScene = function () {

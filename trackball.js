@@ -26,6 +26,13 @@ THREE.InteractiveControls = function (camera, domElement) {
         _intersectObjects.push(obj)
     }
 
+    this.unregisterObject = function(obj) {
+        const index = _intersectObjects.indexOf(obj);
+        if (index > -1) {
+            _intersectObjects.splice(index, 1);
+        }
+    }
+
     this.updateCamera = function () {
         camera.left = this.position.x - this.zoom / 2
         camera.right = this.position.x + this.zoom / 2

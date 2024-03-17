@@ -11,10 +11,4 @@ control Axidraw over Web Serial API.
 - realtime time estimate
 - basic plot optimisation
  
-Todo: 
- - improve plot optimisation with KDTree
- - use MVC 
-  - interactive path updates from simulations
- - better line rendering ?!
-  - maybe support more svg tags but i dont really carea bout svg anymore
-  
+ 
