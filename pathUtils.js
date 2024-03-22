@@ -133,7 +133,7 @@ PathUtils = function () {
 
         paths = this.createGridFromPoints(points)
 
-        var scale = 18000 / N
+        var scale = 180 / N
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         return (paths)
     }

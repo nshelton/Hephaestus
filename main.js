@@ -10,12 +10,20 @@ var queue = []
 plotterPos = [0, 0]
 paused = false
 
+var currentPlotObjects = []
 
-currentPlotObjects = []
+var currentProject = null;
 
-function createPlot(paths) {
+function createPlot(paths, transforms) {
     currentPlotObjects.push(paths)
     viewer.CreatePaths(paths)
+    // something with the transforms for each object
+    // should make a plot object that has transform and the paths together here 
+
+    
+    // viewer
+    
+
 }
 
 function plotCurrent() {
@@ -145,18 +153,28 @@ async function readFileContents(file) {
     }
 }
 
+const SaveFileEntry = async () => {
+
+}
+
 const LoadFileEntry = async (entry) => {
     console.log(entry)
+    document.title = entry.name
+    currentProject = entry
     const file = await entry.getFile();
     const contents = await readFileContents(file);
     console.log(contents)
 
     if (contents.paths) {
         viewer.ClearAll()
-        contents.paths.forEach( path => createPlot(path))
+        contents.paths.forEach( (path, i) => {
+            createPlot(path)
+        })
+
     }
 
 }
+
 
 const printFilesInDirectory = async (element, mouseEvent) => {
     const explorer_node = document.getElementById("explorer");
@@ -181,14 +199,16 @@ const printFilesInDirectory = async (element, mouseEvent) => {
             console.log(contents.timestamp)
             time = contents.timestamp | "Notime"
             console.log(time)
-            projectEntryInfo.innerHTML = contents.timestamp + "<br>"
-            projectEntryInfo.innerHTML += "<ul>"
+            projectEntryInfo.innerHTML += contents.timestamp + "<br>"
+            totalVert = 0
+            totalLine = 0
             contents.paths.forEach( p => {
                 total = p.reduce((acc, current) =>  current.length + acc, 0)
-                projectEntryInfo.innerHTML += "<li>" + total + " verts " + p.length + " lines </li><br>"
+                totalVert += total 
+                totalLine +=  p.length 
             })
 
-            projectEntryInfo.innerHTML += "</ul>"
+            projectEntryInfo.innerHTML += totalVert +" vert "+totalLine+" lines"
             
             explorer_node.appendChild(projectEntry)
 
@@ -265,6 +285,16 @@ function setupDragExplorer() {
 }
 
 function init() {
+
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey && e.key === 's') {
+            // Prevent the Save dialog to open
+            e.preventDefault();
+            // Place your code here
+            console.log('CTRL + S');
+        }
+    });
+
     setupDragExplorer()
     document.addEventListener("click", printFilesInDirectory , false);// Add onclick eventListener 
 
