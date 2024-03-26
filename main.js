@@ -20,7 +20,7 @@ function createPlot(paths, transforms) {
     // something with the transforms for each object
     // should make a plot object that has transform and the paths together here 
 
-    
+
     // viewer
     
 
@@ -77,8 +77,6 @@ async function consumeQueue() {
 
     if (plotter.commandsSent - plotter.commandsCompleted >= 100) 
     return;
-
-    console.log("update", queue.length, plotter.commandsSent, plotter.commandsCompleted)
 
     for (var i = 0; i < 100; i++) {
         if (queue.length > 0) {
@@ -138,7 +136,7 @@ function loadSVG(file) {
         removeAllChildNodes(document.getElementById("svgContainer"))
         document.getElementById("svgContainer").appendChild(doc.children[0]);
         console.log(doc)
-        viewer.setupPlotView(doc)
+        viewer.setupPlotFromSVG(doc)
     });
 }
 
@@ -240,7 +238,7 @@ function dropHandler(ev) {
 
 function dragOverHandler(ev) { ev.preventDefault(); }
 
-function saveCurrentToDB() {
+function saveProject() {
     const date = new Date()
     date_time_string = date.toLocaleDateString() + " " + date.toLocaleTimeString()
     
@@ -296,7 +294,7 @@ function init() {
     });
 
     setupDragExplorer()
-    document.addEventListener("click", printFilesInDirectory , false);// Add onclick eventListener 
+    // document.addEventListener("click", printFilesInDirectory , false);// Add onclick eventListener 
 
     var guiParams = {
 
@@ -312,7 +310,8 @@ function init() {
         voronoi: function () { createPlot(pathUtils.voronoi()) },
         timestamp: function () { createPlot(pathUtils.timestamp()) },
         darkmode: function () { viewer.toggleColors() },
-        saveCurrentToDB : function() {saveCurrentToDB()}
+        saveProject : function() {saveProject()},
+        loadProjects : function() {printFilesInDirectory()}
     };
 
     //load Settings
@@ -330,7 +329,8 @@ function init() {
     gui.add(guiParams, 'sierpinski')
     gui.add(guiParams, 'voronoi')
     gui.add(guiParams, 'darkmode')
-    gui.add(guiParams, 'saveCurrentToDB')
+    gui.add(guiParams, 'saveProject')
+    gui.add(guiParams, 'loadProjects')
 
     app = {
         plot: plotCurrent,

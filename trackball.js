@@ -7,8 +7,6 @@ THREE.InteractiveControls = function (camera, domElement) {
     this.domElement = (domElement !== undefined) ? domElement : document;
     this.camera = camera
 
-    this.a3Width = 297
-    this.a3Height = 420
     var box = this.domElement.getBoundingClientRect();
     this.aspect = box.height / box.width
     this.zoom = 300
@@ -16,22 +14,7 @@ THREE.InteractiveControls = function (camera, domElement) {
     this.position = { x: this.zoom / 2, y: this.zoom / 2 };
     this.mouseDown = false;
     this.dragging = false;
-    var _selectedObject = null
-
-    var _raycaster = new THREE.Raycaster();
-    var _intersectObjects = []
-
-    this.registerObject = function (obj) {
-        obj.geometry.computeBoundingBox()
-        _intersectObjects.push(obj)
-    }
-
-    this.unregisterObject = function(obj) {
-        const index = _intersectObjects.indexOf(obj);
-        if (index > -1) {
-            _intersectObjects.splice(index, 1);
-        }
-    }
+    this.enabled = true;
 
     this.updateCamera = function () {
         camera.left = this.position.x - this.zoom / 2
@@ -43,7 +26,6 @@ THREE.InteractiveControls = function (camera, domElement) {
         camera.updateProjectionMatrix()
     }
 
-
     _panStart = new THREE.Vector2(),
         _panEnd = new THREE.Vector2();
 
@@ -52,16 +34,13 @@ THREE.InteractiveControls = function (camera, domElement) {
     this.handleResize = function () {
 
         if (this.domElement === document) {
-
             this.screen.left = 0;
             this.screen.top = 0;
             this.screen.width = window.innerWidth;
             this.screen.height = window.innerHeight;
 
         } else {
-
             var box = this.domElement.getBoundingClientRect();
-            // adjustments come from similar code in the jquery offset() function
             var d = this.domElement.ownerDocument.documentElement;
             this.screen.left = box.left + window.pageXOffset - d.clientLeft;
             this.screen.top = box.top + window.pageYOffset - d.clientTop;
@@ -117,24 +96,17 @@ THREE.InteractiveControls = function (camera, domElement) {
         var mouseChange = new THREE.Vector2()
 
         return function () {
-
             mouseChange.copy(_panEnd).sub(_panStart);
-
-            if (mouseChange.lengthSq() && _selectedObject != null) {
-
-                // this.position.x -= mouseChange.x * this.zoom
-                // this.position.y -= mouseChange.y * this.zoom
-
-                _selectedObject.position.set(
-                    _selectedObject.position.x + mouseChange.x * this.zoom,
-                    _selectedObject.position.y + mouseChange.y * this.zoom,
-                    0);
-            }
         }
 
     }());
 
     this.update = function () {
+
+        // if (!this.enabled) {
+        //     return
+        // }
+        
         if (this.canvasMove) {
             this.panCamera()
             _panStart.copy(_panEnd)
@@ -165,7 +137,22 @@ THREE.InteractiveControls = function (camera, domElement) {
 
     }
 
+    this.disable = function() {
+        this.enabled = false
+        
+        document.removeEventListener('mousemove', mousemove);
+        document.removeEventListener('mouseup', mouseup);
+        document.removeEventListener('mousedown', mousedown);
+
+    }
+
+    this.enable = function() {
+        this.enabled = true
+
+    }
+
     function mousedown(event) {
+        if (!_this.enabled ) return;
 
         event.preventDefault();
         event.stopPropagation();
@@ -178,36 +165,22 @@ THREE.InteractiveControls = function (camera, domElement) {
         _mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         _mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-        var intersects = []
-        _raycaster.setFromCamera(_mouse, camera);
-        if (_intersectObjects.length > 0) {
-            intersects = _raycaster.intersectObjects(_intersectObjects);
-            console.log(intersects)
-        }
+        _this.canvasMove = true;
 
-        if (intersects.length > 0) {
-            _this.dragging = true;
-            _selectedObject = intersects[0].object
-            _selectedObject.isMoving = true
-
-            domElement.style.cursor = 'move';
-
-        } else {
-            _this.canvasMove = true;
-
-        }
         document.addEventListener('mousemove', mousemove, false);
         document.addEventListener('mouseup', mouseup, false);
     }
 
     function mousemove(event) {
+        if (!_this.enabled ) return;
+
         _panEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
         event.preventDefault();
         event.stopPropagation();
-
     }
 
     function mouseup(event) {
+        if (!_this.enabled ) return;
 
         event.preventDefault();
         event.stopPropagation();
@@ -215,9 +188,6 @@ THREE.InteractiveControls = function (camera, domElement) {
         _this.canvasMove = false;
         _this.dragging = false;
         domElement.style.cursor = 'default';
-        if (_selectedObject) 
-            _selectedObject.isMoving = false
-        _selectedObject = null;
 
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
