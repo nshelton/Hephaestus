@@ -1,6 +1,5 @@
 
 PlotViewer = function () {
-    this.enableControls = true
     this.lineObjects = []
     this.segments = []
 
@@ -75,7 +74,6 @@ PlotViewer = function () {
 
     const a3Width = 297
     const a3Height = 420
-
 
     this.drawPlotterMovements = function (paths) {
         offset = 0

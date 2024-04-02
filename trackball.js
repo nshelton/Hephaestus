@@ -112,43 +112,16 @@ THREE.InteractiveControls = function (camera, domElement) {
             _panStart.copy(_panEnd)
         }
 
-        if (this.dragging) {
-            this.dragObject()
-            _panStart.copy(_panEnd)
-        }
-
     };
-
-    this.reset = function () {
-
-
-
-    };
-
-    // listeners
-
-    function keydown(event) {
-
-
-    }
-
-    function keyup(event) {
-
-
-    }
 
     this.disable = function() {
-        this.enabled = false
-        
-        document.removeEventListener('mousemove', mousemove);
-        document.removeEventListener('mouseup', mouseup);
-        document.removeEventListener('mousedown', mousedown);
-
+        // this.enabled = false
+        // document.removeEventListener('mousemove', mousemove);
+        // document.removeEventListener('mouseup', mouseup);
     }
 
     this.enable = function() {
-        this.enabled = true
-
+        // this.enabled = true
     }
 
     function mousedown(event) {
@@ -212,7 +185,7 @@ THREE.InteractiveControls = function (camera, domElement) {
         }
 
         _this.zoom *= (1 - 0.05 * delta)
-        _this.zoom = Math.min(_this.zoom, 1000000)
+        _this.zoom = Math.min(_this.zoom, 1000)
         _this.zoom = Math.max(_this.zoom, 50)
         _this.updateCamera()
 
@@ -225,10 +198,5 @@ THREE.InteractiveControls = function (camera, domElement) {
     this.domElement.addEventListener('mousewheel', mousewheel, false);
     this.domElement.addEventListener('DOMMouseScroll', mousewheel, false); // firefox
 
-    window.addEventListener('keydown', keydown, false);
-    window.addEventListener('keyup', keyup, false);
-
-    // force an update at start
     this.update();
-
 };

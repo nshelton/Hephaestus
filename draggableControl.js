@@ -1,6 +1,7 @@
 class DraggableController {
     outlineColor = 0x666688;  
-    hoverColor = 0x66ff66;  
+    hoverScaleColor = 0x66ff66;  
+    hoverTranslateColor = 0x66ffff;  
 
     outlineMaterial = new THREE.LineBasicMaterial({ color: this.outlineColor })
 
@@ -24,7 +25,7 @@ class DraggableController {
 
         // worldBoundingBox.getCenter(this.boundingRectangle.position)
         worldBoundingBox.getSize(this.boundingRectangle.scale)
-        
+        this.boundingRectangle.scale.multiplyScalar(0.5)
         obj.add(this.boundingRectangle);
     }
 
@@ -59,20 +60,17 @@ class DraggableController {
         const cube = new THREE.Mesh(geometry, material);
 
         this.object.add(cube)
-
     }
+
 
     onMouseDown(event) {
         if (!this.enabled) return;
 
         event.preventDefault();
-
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        this.raycaster.setFromCamera(this.mouse, this.camera);
+        event.stopPropagation();
         const intersects = this.raycaster.intersectObject(this.boundingRectangle);
 
+        
         if (intersects.length > 0) {
             this.raycaster.ray.intersectPlane(this.backplane, this.intersection)
 
@@ -99,9 +97,32 @@ class DraggableController {
         }
     }
 
+    getMoveType() {
+        const bbox = new THREE.Box3().setFromObject(this.object);
+        const center = bbox.getCenter(new THREE.Vector3());
+
+        const distToCenter = center.distanceTo(this.intersection);
+        var bbox_dim = bbox.getSize(new THREE.Vector3())
+
+        const largest_edge = Math.max(bbox_dim.x, bbox_dim.y) / 4;
+
+        if (distToCenter <= largest_edge) {
+            this.domElement.style.cursor = 'move'; // Change cursor for scaling
+            this.mode = 'translate';
+            this.offset.copy(this.intersection).sub(this.object.position);
+            this.domElement.style.cursor = 'move';
+
+        } else {
+            this.mode = 'scale';
+            this.domElement.style.cursor = 'n-resize'; // Change cursor for scaling
+            this.initialScale.copy(this.object.scale);
+            this.initialDistance = this.intersection.distanceTo(center);
+        }
+    }
+
     onMouseEnter() {
         this.canvasControl.disable()
-        this.outlineMaterial.color.setHex( this.hoverColor );
+        this.outlineMaterial.color.setHex( this.hoverTranslateColor );
     }   
 
     onMouseExit() {
@@ -110,20 +131,23 @@ class DraggableController {
     }
 
     onMouseMove(event) {
-        if (!this.enabled) return;
-
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
         this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        if (!this.enabled) return;
+
+
         this.raycaster.ray.intersectPlane(this.backplane, this.intersection)
 
         if (this.mode === 'translate') {
-
+            event.preventDefault();
+            event.stopPropagation();
             this.object.position.copy(this.intersection.sub(this.offset));
         
         } else if (this.mode === 'scale') {
-
+            event.preventDefault();
+            event.stopPropagation();
             const bbox = new THREE.Box3().setFromObject(this.object);
             const center = bbox.getCenter(new THREE.Vector3());
     
