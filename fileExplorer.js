@@ -99,7 +99,7 @@ class FileExplorer {
                 var totalVert = 0
                 var totalLine = 0
                 contents.paths.forEach( p => {
-                    total = p.reduce((acc, current) =>  current.length + acc, 0)
+                    var total = p.reduce((acc, current) =>  current.length + acc, 0)
                     totalVert += total 
                     totalLine +=  p.length 
                 })
@@ -140,6 +140,14 @@ class FileExplorer {
 
     constructor(loadedCallback) {
         this.loadedCallback = loadedCallback;
+        const explorer_node = document.getElementById("explorer");
+        var load_button = document.createElement("button")
+        load_button.innerText = "Open Folder"
+        explorer_node.appendChild(load_button)
+
+        load_button.addEventListener("click", function(e){
+            this.loadDirectory()
+        }.bind(this))
 
         document.addEventListener('keydown', e => {
             if (e.keyCode === 83 && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
