@@ -40,7 +40,9 @@ class PlotterDriver {
         this.queue.push(["move", dx, dy])
         plotterPos = p
     }
-
+    plot() {
+        console.log("plot")
+    }
     plotPath(paths) {
         console.log(paths)
         paths = this.optomizer.optomizeKD(paths)

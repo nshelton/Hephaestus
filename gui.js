@@ -111,7 +111,6 @@ PlotterGUI = function() {
         this.downValueText = makeText("downValue", 400, 80)
         this.guiNode.appendChild(this.downValueText)
 
-
         this.speedSlider = document.createElement("input")
         this.speedSlider.type = "range"
         this.speedSlider.style.height = "30px"

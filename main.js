@@ -55,22 +55,22 @@ function loadSVG(file) {
     });
 }
 
-function dropHandler(ev) {
-    console.log('File(s) dropped');
-    ev.preventDefault();
-    if (ev.dataTransfer.items) {
-        [...ev.dataTransfer.items].forEach((item, i) => {
-            if (item.kind === 'file') {
-                const file = item.getAsFile();
-                if (file.name.endsWith(".svg")) {
-                    loadSVG(file)
-                } else {
-                    loadImage(file)
-                }
-            }
-        });
-    }
-}
+// function dropHandler(ev) {
+//     console.log('File(s) dropped');
+//     ev.preventDefault();
+//     if (ev.dataTransfer.items) {
+//         [...ev.dataTransfer.items].forEach((item, i) => {
+//             if (item.kind === 'file') {
+//                 const file = item.getAsFile();
+//                 if (file.name.endsWith(".svg")) {
+//                     loadSVG(file)
+//                 } else {
+//                     loadImage(file)
+//                 }
+//             }
+//         });
+//     }
+// }
 
 function dragOverHandler(ev) { ev.preventDefault(); }
 
@@ -90,10 +90,16 @@ function init() {
     gui.add(guiParams, 'saveProject')
     gui.add(guiParams, 'loadProjects')
 
-    // driver.plotPath(viewer.createPlotList())
 
     viewer.setupScene()
-    customGui.init(driver);
+
+    driver.plot = function() {
+        // this is storing the data in the plot instead of the "model"
+        
+        driver.plotPath(viewer.createPlotList())
+    }
+
+    customGui.init(driver)
 
     customGui.update(driver.queue, driver.plotter);
 
