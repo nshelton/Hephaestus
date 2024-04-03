@@ -154,6 +154,8 @@ PlotViewer = function () {
 
         this.scene.add(uiContainer)
 
+        // this is probably designed wrong. Need to make a new controller that knows about all the plot objects
+        // and can decide which one you are clicking on in the case of overlap
         const draggableController = new DraggableController(this.controls, uiContainer, this.camera, this.renderer.domElement);
         this.dragables.push(draggableController)
     }

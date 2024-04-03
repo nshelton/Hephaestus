@@ -17,13 +17,6 @@ var currentProject = null;
 function createPlot(paths, transforms) {
     currentPlotObjects.push(paths)
     viewer.CreatePaths(paths)
-    // something with the transforms for each object
-    // should make a plot object that has transform and the paths together here 
-
-
-    // viewer
-    
-
 }
 
 function plotCurrent() {
@@ -141,83 +134,6 @@ function loadSVG(file) {
 }
 
 
-async function readFileContents(file) {
-    try {
-      const fileContents = await file.text();
-      return JSON.parse(fileContents); // Parse JSON text into an object
-    } catch (error) {
-      console.error(`Error reading file ${file.name}:`, error);
-      return null; // Return null if there's an error reading the file
-    }
-}
-
-const SaveFileEntry = async () => {
-
-}
-
-const LoadFileEntry = async (entry) => {
-    console.log(entry)
-    document.title = entry.name
-    currentProject = entry
-    const file = await entry.getFile();
-    const contents = await readFileContents(file);
-    console.log(contents)
-
-    if (contents.paths) {
-        viewer.ClearAll()
-        contents.paths.forEach( (path, i) => {
-            createPlot(path)
-        })
-
-    }
-
-}
-
-
-const printFilesInDirectory = async (element, mouseEvent) => {
-    const explorer_node = document.getElementById("explorer");
-    const directoryHandle = await window.showDirectoryPicker();
-    for await (const entry of directoryHandle.values()) {
-        if (entry.kind === 'file') {
-
-            project_name = entry.name.split(".")[0]
-            if (!entry.name.endsWith("json")) continue;
-            var projectEntry = document.createElement("div")
-            var projectEntryTitle = document.createElement("h1")
-            var projectEntryInfo = document.createElement("span")
-            projectEntry.appendChild(projectEntryTitle)
-            projectEntry.appendChild(projectEntryInfo)
-
-            projectEntry.classList.add('explorerEntry')
-            projectEntryTitle.innerText = project_name
-
-            const file = await entry.getFile();
-            const contents = await readFileContents(file);
-            console.log(contents)
-            console.log(contents.timestamp)
-            time = contents.timestamp | "Notime"
-            console.log(time)
-            projectEntryInfo.innerHTML += contents.timestamp + "<br>"
-            totalVert = 0
-            totalLine = 0
-            contents.paths.forEach( p => {
-                total = p.reduce((acc, current) =>  current.length + acc, 0)
-                totalVert += total 
-                totalLine +=  p.length 
-            })
-
-            projectEntryInfo.innerHTML += totalVert +" vert "+totalLine+" lines"
-            
-            explorer_node.appendChild(projectEntry)
-
-            projectEntry.addEventListener("click", function(e){
-                LoadFileEntry(entry)
-            })
-        }
-    }
-  
-    document.removeEventListener("click", printFilesInDirectory);// Add onclick eventListener 
-};
 
 function dropHandler(ev) {
     console.log('File(s) dropped');
@@ -238,63 +154,14 @@ function dropHandler(ev) {
 
 function dragOverHandler(ev) { ev.preventDefault(); }
 
-function saveProject() {
-    const date = new Date()
-    date_time_string = date.toLocaleDateString() + " " + date.toLocaleTimeString()
-    
-    data_to_save = {
-        "paths" : currentPlotObjects,
-        "timestamp" : date_time_string,
-        "thumbnail"  : []
-    }
 
-    var fileContent = JSON.stringify(data_to_save, function(key, val) {
-        return val.toFixed ? Number(val.toFixed(3)) : val;
-    })
-    
-    var bb = new Blob([fileContent ], { type: 'text/plain' });
-    var a = document.createElement('a');
-    a.download = 'download.json';
-    a.href = window.URL.createObjectURL(bb);
-    a.click();
-}
 
-function setupDragExplorer() {
-    const explorer_node = document.getElementById("explorer");
-    const gui_node = document.getElementById("gui");
-
-    const BORDER_SIZE = 20;
-    let m_pos;
-    function resize(e){
-        explorer_node.style.width = e.x + "px";
-        gui_node.style.left = e.x + "px";
-    }
-
-    explorer_node.addEventListener("mousedown", function(e){
-        currentWidth = parseInt(getComputedStyle(explorer_node, '').width) 
-        if (Math.abs(e.offsetX - currentWidth) < BORDER_SIZE) {
-            document.addEventListener("mousemove", resize, false);
-        }
-    }, false);
-
-    document.addEventListener("mouseup", function(){
-        document.removeEventListener("mousemove", resize, false);
-    }, false);
-}
 
 function init() {
 
-    document.addEventListener('keydown', e => {
-        if (e.ctrlKey && e.key === 's') {
-            // Prevent the Save dialog to open
-            e.preventDefault();
-            // Place your code here
-            console.log('CTRL + S');
-        }
-    });
-
-    setupDragExplorer()
-    // document.addEventListener("click", printFilesInDirectory , false);// Add onclick eventListener 
+    this.fileExplorer = new FileExplorer(function(loaded_file) {
+        console.log("loaded!", loaded_file)
+    })
 
     var guiParams = {
 
@@ -310,8 +177,8 @@ function init() {
         voronoi: function () { createPlot(pathUtils.voronoi()) },
         timestamp: function () { createPlot(pathUtils.timestamp()) },
         darkmode: function () { viewer.toggleColors() },
-        saveProject : function() {saveProject()},
-        loadProjects : function() {printFilesInDirectory()}
+        saveProject : function() {fileExplorer.saveProject(currentPlotObjects)},
+        loadProjects : function() {fileExplorer.loadDirectory()}
     };
 
     //load Settings
