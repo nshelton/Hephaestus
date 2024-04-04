@@ -4,16 +4,15 @@ driver = new PlotterDriver()
 
 viewer = new PlotViewer()
 customGui = new PlotterGUI()
-optomizer = new Optomizer()
+
+app_model = new AppModel()
 
 // imageUtils = new imageUtils()
 pathUtils = new PathUtils()
 
-var currentPlotObjects = []
-var currentProject = null;
 
 function createPlot(paths, transforms) {
-    currentPlotObjects.push(paths)
+    // currentPlotObjects.push(paths)
     viewer.CreatePaths(paths)
 }
 
@@ -44,16 +43,16 @@ function removeAllChildNodes(parent) {
 //     })
 // }
 
-function loadSVG(file) {
-    file.text().then(function (response) {
-        var parser = new DOMParser();
-        var doc = parser.parseFromString(response, "image/svg+xml");
-        removeAllChildNodes(document.getElementById("svgContainer"))
-        document.getElementById("svgContainer").appendChild(doc.children[0]);
-        console.log(doc)
-        viewer.setupPlotFromSVG(doc)
-    });
-}
+// function loadSVG(file) {
+//     file.text().then(function (response) {
+//         var parser = new DOMParser();
+//         var doc = parser.parseFromString(response, "image/svg+xml");
+//         removeAllChildNodes(document.getElementById("svgContainer"))
+//         document.getElementById("svgContainer").appendChild(doc.children[0]);
+//         console.log(doc)
+//         viewer.setupPlotFromSVG(doc)
+//     });
+// }
 
 // function dropHandler(ev) {
 //     console.log('File(s) dropped');
@@ -80,22 +79,10 @@ function init() {
         console.log("loaded!", loaded_file)
     })
 
-    var guiParams = {
-        saveProject: function () { fileExplorer.saveProject(currentPlotObjects) },
-        loadProjects: function () { }
-    };
-
-    var gui = new dat.GUI(guiParams);
-
-    gui.add(guiParams, 'saveProject')
-    gui.add(guiParams, 'loadProjects')
-
-
-    viewer.setupScene()
+    viewer.setupScene(app_model)
 
     driver.plot = function() {
         // this is storing the data in the plot instead of the "model"
-        
         driver.plotPath(viewer.createPlotList())
     }
 
@@ -105,16 +92,17 @@ function init() {
 
     // plotter.connect()
 
+
+    render_loop = function() {
+        viewer.render()
+        requestAnimationFrame(render_loop)
+    }
+    render_loop()
+
     setTimeout(() => {
-        if (window.localStorage.getItem("plotter_upPosition") != null) {
-            customGui.setPenUpValue(Number(window.localStorage.getItem("plotter_upPosition")))
-        }
-        if (window.localStorage.getItem("plotter_downPosition") != null) {
-            customGui.setPenDownValue(Number(window.localStorage.getItem("plotter_downPosition")))
-        }
-        if (window.localStorage.getItem("plotter_speed") != null) {
-            customGui.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
-        }
+
+        customGui.loadSettings()
+
 
         textstring = new Date().toLocaleString().split(",")[0]
         textstring = textstring.replace("2023", "23")

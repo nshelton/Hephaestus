@@ -6,6 +6,7 @@ class PlotterDriver {
         this.plotterPos = [0, 0]
         this.paused = false
         this.plotter = new Axidraw()
+        this.optomizer = new Optomizer()
     }
 
     disengage () {
@@ -85,7 +86,7 @@ class PlotterDriver {
             if (this.queue.length > 0) {
                 var next = this.queue.shift()
                 if (next) {
-                    customGui.update(queue, plotter);
+                    customGui.update(this.queue, this.plotter);
                     switch (next[0]) {
                         case "move": await this.plotter.move(next[1], next[2]); break;
                         case "up": await this.plotter.penUp(); break;

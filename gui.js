@@ -2,6 +2,18 @@
 
 PlotterGUI = function() { 
 
+    this.loadSettings = function() {
+        if (window.localStorage.getItem("plotter_upPosition") != null) {
+            this.setPenUpValue(Number(window.localStorage.getItem("plotter_upPosition")))
+        }
+        if (window.localStorage.getItem("plotter_downPosition") != null) {
+            this.setPenDownValue(Number(window.localStorage.getItem("plotter_downPosition")))
+        }
+        if (window.localStorage.getItem("plotter_speed") != null) {
+            this.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
+        }
+    }
+
     this.setPenUpValue = function(val) {
         this.upValueText.innerText = val
         this.penUpSlider.value = val
