@@ -1,7 +1,12 @@
 class AppModel {
 
-    cameraPosition = [0,0]
+    dom_element = undefined
 
+    camera_position = [0,0]
+    zoom = 100
+    aspect = 1
+
+    
 
 }
 

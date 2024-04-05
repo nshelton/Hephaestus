@@ -1,13 +1,13 @@
 
-THREE.InteractiveControls = function (camera, domElement) {
+THREE.InteractiveControls = function (appmodel) {
 
     this.screen = { left: 0, top: 0, width: 0, height: 0 };
-
+    this.appmodel = appmodel
     var _this = this;
-    this.domElement = (domElement !== undefined) ? domElement : document;
-    this.camera = camera
+    
+    this.domElement = appmodel.dom_element
+    var box = this.domElement.getBoundingClientRect()
 
-    var box = this.domElement.getBoundingClientRect();
     this.aspect = box.height / box.width
     this.zoom = 300
 
@@ -16,20 +16,17 @@ THREE.InteractiveControls = function (camera, domElement) {
     this.dragging = false;
     this.enabled = true;
 
-    this.updateCamera = function () {
-        camera.left = this.position.x - this.zoom / 2
-        camera.right = this.position.x + this.zoom / 2
-        camera.top = this.position.y - this.zoom / 2 * this.aspect
-        camera.bottom = this.position.y + this.zoom / 2 * this.aspect
-        camera.position.set(0, 0, 10)
-
-        camera.updateProjectionMatrix()
+    this.updateModel = function () {
+        this.appmodel.zoom = this.zoom
+        this.appmodel.aspect = this.aspect
+        this.appmodel.camera_position = [this.position.x, this.position.y]
+        console.log(this.appmodel)
     }
 
     _panStart = new THREE.Vector2(),
         _panEnd = new THREE.Vector2();
 
-    this.updateCamera();
+    this.updateModel();
     // methods
     this.handleResize = function () {
 
@@ -84,7 +81,7 @@ THREE.InteractiveControls = function (camera, domElement) {
                 this.position.x -= mouseChange.x * this.zoom
                 this.position.y -= mouseChange.y * this.zoom
 
-                this.updateCamera()
+                this.updateModel()
             }
         }
 
@@ -133,7 +130,7 @@ THREE.InteractiveControls = function (camera, domElement) {
         _panEnd.copy(_panStart)
 
         var _mouse = new THREE.Vector2()
-        var rect = domElement.getBoundingClientRect();
+        var rect = _this.domElement.getBoundingClientRect();
 
         _mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         _mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -160,7 +157,7 @@ THREE.InteractiveControls = function (camera, domElement) {
 
         _this.canvasMove = false;
         _this.dragging = false;
-        domElement.style.cursor = 'default';
+        this.domElement.style.cursor = 'default';
 
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);
@@ -187,7 +184,7 @@ THREE.InteractiveControls = function (camera, domElement) {
         _this.zoom *= (1 - 0.05 * delta)
         _this.zoom = Math.min(_this.zoom, 1000)
         _this.zoom = Math.max(_this.zoom, 50)
-        _this.updateCamera()
+        _this.updateModel()
 
     }
 

@@ -11,7 +11,7 @@ app_model = new AppModel()
 pathUtils = new PathUtils()
 
 
-function createPlot(paths, transforms) {
+function createPlot(paths) {
     // currentPlotObjects.push(paths)
     viewer.CreatePaths(paths)
 }
@@ -81,39 +81,43 @@ function init() {
 
     viewer.setupScene(app_model)
 
-    driver.plot = function() {
+    driver.plot = function () {
         // this is storing the data in the plot instead of the "model"
         driver.plotPath(viewer.createPlotList())
     }
 
     customGui.init(driver)
-
     customGui.update(driver.queue, driver.plotter);
 
-    // plotter.connect()
+    controls = new THREE.InteractiveControls(app_model);
 
 
-    render_loop = function() {
+    render_loop = function () {
         viewer.render()
         requestAnimationFrame(render_loop)
+        controls.update()
+
+        viewer.updateFromModel(app_model)
     }
+
+
     render_loop()
 
     setTimeout(() => {
 
+ 
+
+
         customGui.loadSettings()
 
 
-        textstring = new Date().toLocaleString().split(",")[0]
-        textstring = textstring.replace("2023", "23")
-        textstring += " "
-        textstring += + new Date()
-        var textPath = pathUtils.text(textstring + "")
+        var textPath = pathUtils.text(new Date().toLocaleString())
         textPath.flat(2)
         var textPath = pathUtils.transform(textPath, 0.006, 50, 10)
-        createPlot(textPath)
-        textPath.flat(2)
-        var textPath = pathUtils.transform(textPath, 0.01, 50, 10)
+        createPlot(textPath, [0, 0])
+        createPlot(pathUtils.star(), [0, 0])
+        // textPath.flat(2)
+        // var textPath = pathUtils.transform(textPath, 0.01, 50, 10)
         // createPlot(textPath)
 
         var squares = []
@@ -130,7 +134,6 @@ function init() {
         driver.consumeQueue()
         driver.readStatus()
 
-        // createPlot(imageUtils.star())
         // image = imageUtils.createImage()
         // createPlot(imageUtils.dither(image.data, image.width, image.height))
 

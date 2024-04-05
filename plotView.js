@@ -10,7 +10,6 @@ class PlotViewer {
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.camera = new THREE.OrthographicCamera(0, 100, 0, 100, 1, 100);
-        this.controls = null;
         this.scene = new THREE.Scene();
         this.dragables = []
 
@@ -28,6 +27,17 @@ class PlotViewer {
         this.darkScheme = false
         this.uiContainers = new THREE.Object3D()
         this.scene.add(this.uiContainers)
+    }
+
+    updateFromModel(app_model) {
+        this.camera.left = - app_model.zoom / 2
+        this.camera.right =  app_model.zoom / 2
+        this.camera.top = - app_model.zoom / 2 * app_model.aspect
+        this.camera.bottom = app_model.zoom / 2 * app_model.aspect
+        this.camera.position.set(app_model.camera_position[0], app_model.camera_position[1], 2)
+
+        
+        this.camera.updateProjectionMatrix()
     }
 
     toggleColors() {
@@ -162,13 +172,15 @@ class PlotViewer {
         this.dragables.push(draggableController)
     }
 
-    setupScene() {
+    setupScene(app_model) {
+
+        app_model.dom_element = viewer.renderer.domElement
+
         const view = document.getElementById("plotViewContainer")
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById("plotViewContainer").appendChild(this.renderer.domElement);
 
         this.camera.lookAt(new THREE.Vector3());
-        this.controls = new THREE.InteractiveControls(this.camera, this.renderer.domElement);
 
         const geometry = new THREE.PlaneGeometry(this.a3Height, this.a3Width, this.a3Height / 10, this.a3Width / 10);
 
@@ -200,7 +212,6 @@ class PlotViewer {
 
     render() {
         this.renderer.render(this.scene, this.camera);
-        this.controls.update()
     }
 
     parseSVGNodes(paths, polyline) {
