@@ -59,6 +59,10 @@ class PlotViewer {
         container_outline.position.copy(bbox.getCenter(new THREE.Vector3()));
         container.add(container_outline);
 
+
+        var dotgeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
+        var originDot = new THREE.Mesh(dotgeometry, this.greenMaterial);
+        container.add(originDot);
         container.uiOutline = container_outline
         this.id_to_container[plot_model.id] = container
     }

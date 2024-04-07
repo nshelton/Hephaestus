@@ -144,8 +144,10 @@ class CanvasControls {
             if (this.mode == this.MODE.HOVER_OBJECT_SCALE) {
                 this.mode = this.MODE.SCALE_OBJECT;
                 this.initialScale = plot_model.scale;
-                const center = plot_model.bbox.getCenter(new THREE.Vector3());
-                this.initialDistance = this.intersection.distanceTo(center);
+
+                const plotPos = new THREE.Vector3(plot_model.position.x,  plot_model.position.y, 0)
+
+                this.initialDistance = this.intersection.distanceTo(plotPos);
             }
 
         } else {
@@ -162,8 +164,6 @@ class CanvasControls {
     }
 
     mousemove(event) {
-
-        var rect = document.documentElement.getBoundingClientRect()
 
         this.mouseOnScreen.set(
             (event.pageX - this.screen.left) / this.screen.width,
@@ -191,9 +191,8 @@ class CanvasControls {
             
         } else if (this.mode == this.MODE.SCALE_OBJECT) {
             const plot_model = this.appmodel.getPlotById(this.hover_id)
-            const center = plot_model.bbox.getCenter(new THREE.Vector3());
-    
-            const currentDistance = this.intersection.distanceTo(center);
+            const plotPos = new THREE.Vector3(plot_model.position.x,  plot_model.position.y, 0)
+            const currentDistance = this.intersection.distanceTo(plotPos)
             const scaleFactor = currentDistance / this.initialDistance;
     
             plot_model.scale = this.initialScale * scaleFactor;
@@ -212,7 +211,7 @@ class CanvasControls {
                     const center = plot_model.bbox.getCenter(new THREE.Vector3());
                     const distToCenter = center.distanceTo(this.intersection);
                     var bbox_dim =  plot_model.bbox.getSize(new THREE.Vector3());
-                    const largest_edge = Math.max(bbox_dim.x, bbox_dim.y) / 4;
+                    const largest_edge = Math.max(bbox_dim.x, bbox_dim.y) / 3;
 
                     if (distToCenter <= largest_edge) {
                         this.domElement.style.cursor = 'move'; 
