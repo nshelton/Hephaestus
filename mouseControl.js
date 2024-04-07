@@ -20,7 +20,6 @@ THREE.InteractiveControls = function (appmodel) {
         this.appmodel.zoom = this.zoom
         this.appmodel.aspect = this.aspect
         this.appmodel.camera_position = [this.position.x, this.position.y]
-        console.log(this.appmodel)
     }
 
     _panStart = new THREE.Vector2(),
@@ -157,7 +156,6 @@ THREE.InteractiveControls = function (appmodel) {
 
         _this.canvasMove = false;
         _this.dragging = false;
-        this.domElement.style.cursor = 'default';
 
         document.removeEventListener('mousemove', mousemove);
         document.removeEventListener('mouseup', mouseup);

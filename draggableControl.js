@@ -34,7 +34,7 @@ class DraggableController {
         this.camera = camera;
         this.domElement = domElement || document.body;
         this.canvasControl = canvasControl
-        this.enabled = true;
+        this.enabled = false;
         this.mode = null;
         this.isHovering = false;
 
@@ -121,12 +121,12 @@ class DraggableController {
     }
 
     onMouseEnter() {
-        this.canvasControl.disable()
+        // this.canvasControl.disable()
         this.outlineMaterial.color.setHex( this.hoverTranslateColor );
     }   
 
     onMouseExit() {
-        this.canvasControl.enable()
+        // this.canvasControl.enable()
         this.outlineMaterial.color.setHex( this.outlineColor );
     }
 

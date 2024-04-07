@@ -13,13 +13,10 @@ pathUtils = new PathUtils()
 
 function createPlot(paths) {
     // currentPlotObjects.push(paths)
-    viewer.CreatePaths(paths)
-}
+    const new_model = new PlotModel(paths, { x: 0, y: 0 }, 1)
+    app_model.plot_models.push(new_model)
+    viewer.updateFromModel(app_model)
 
-function removeAllChildNodes(parent) {
-    while (parent.firstChild) {
-        parent.removeChild(parent.firstChild);
-    }
 }
 
 // function loadImage(file) {
@@ -76,7 +73,21 @@ function dragOverHandler(ev) { ev.preventDefault(); }
 function init() {
 
     this.fileExplorer = new FileExplorer(function (loaded_file) {
-        console.log("loaded!", loaded_file)
+
+        if (loaded_file.app_model) {
+            app_model = loaded_file.app_model
+            return
+        }
+
+        if (!loaded_file.paths) {
+            console.log("bad file!", loaded_file)
+            return
+        }
+        
+        app_model.paths = []
+        loaded_file.paths.forEach((path, i) => {
+            createPlot(path)
+        })
     })
 
     viewer.setupScene(app_model)
@@ -105,7 +116,7 @@ function init() {
 
     setTimeout(() => {
 
- 
+
 
 
         customGui.loadSettings()

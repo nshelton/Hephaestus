@@ -1,6 +1,8 @@
 
 class PlotViewer {
     
+
+
     a3Width = 297
     a3Height = 420
 
@@ -11,7 +13,6 @@ class PlotViewer {
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.camera = new THREE.OrthographicCamera(0, 100, 0, 100, 1, 100);
         this.scene = new THREE.Scene();
-        this.dragables = []
 
         this.outlineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
@@ -25,19 +26,75 @@ class PlotViewer {
         this.downMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
         this.darkScheme = false
-        this.uiContainers = new THREE.Object3D()
-        this.scene.add(this.uiContainers)
+
+        this.ids_to_threeObjects = {}
+
     }
 
+    createPlotView(plot_model) {
+        console.log("CREATED PLOT", plot_model.id)
+        var pathContainer = new THREE.Object3D()
+
+        plot_model.paths.forEach(path => {
+            const points = path.map(s => new THREE.Vector3(s[0], s[1], 1))
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, this.yellowMaterial);
+
+            this.lineObjects.push(line)
+            this.segments.push(points)
+
+            pathContainer.add(line)
+        })
+        pathContainer.position.set(plot_model.position.x, plot_model.position.y, 0)
+        this.scene.add(pathContainer)
+        
+        var uiContainer = new THREE.Object3D()
+        const bbox = new THREE.Box3().setFromObject(pathContainer);
+        uiContainer.position.copy(bbox.getCenter(new THREE.Vector3()));
+        pathContainer.position.copy(bbox.getCenter(new THREE.Vector3()).multiplyScalar(-1));
+
+        console.log(uiContainer.position)
+        this.scene.remove(pathContainer);
+        uiContainer.add(pathContainer);
+
+        this.scene.add(uiContainer)
+        this.ids_to_threeObjects[plot_model.id] = uiContainer
+    }
+
+    getIdsInView() {
+        return Object.getOwnPropertyNames(this.ids_to_threeObjects)
+    }
+    
     updateFromModel(app_model) {
+
         this.camera.left = - app_model.zoom / 2
         this.camera.right =  app_model.zoom / 2
         this.camera.top = - app_model.zoom / 2 * app_model.aspect
         this.camera.bottom = app_model.zoom / 2 * app_model.aspect
         this.camera.position.set(app_model.camera_position[0], app_model.camera_position[1], 2)
-
-        
         this.camera.updateProjectionMatrix()
+
+        var app_model_ids = []
+
+        let current_ids = this.getIdsInView()
+        // console.log(current_ids)
+        app_model.plot_models.forEach(plot => {
+            app_model_ids.push(plot.id)
+            let idx = current_ids.indexOf(plot.id)
+            if (idx == -1) {
+                this.createPlotView(plot)
+            }
+
+            current_ids.splice(idx, 1)
+
+            // if (!this.plotViewObject_ids.has(plot.id)) {
+            // }
+        })
+
+        // console.log(current_ids)
+        // check if anything changed, use ID i guess
+
+
     }
 
     toggleColors() {
@@ -62,6 +119,7 @@ class PlotViewer {
             this.bbmaterial.color = new THREE.Color("#88ff88")
         }
     }
+
 
     createPlotList() {
 
@@ -135,43 +193,7 @@ class PlotViewer {
 
     }
 
-    CreatePaths(paths) {
-        var pathContainer = new THREE.Object3D()
-
-        paths.forEach(path => {
-            const points = path.map(s => new THREE.Vector3(s[0], s[1], 1))
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(geometry, this.yellowMaterial);
-
-            this.lineObjects.push(line)
-            pathContainer.add(line)
-            this.segments.push(points)
-
-
-        })
-        this.scene.add(pathContainer)
-        console.log(pathContainer.position)
-
-        var uiContainer = new THREE.Object3D()
-        const bbox = new THREE.Box3().setFromObject(pathContainer);
-        uiContainer.position.copy(bbox.getCenter(new THREE.Vector3()));
-        pathContainer.position.copy(bbox.getCenter(new THREE.Vector3()).multiplyScalar(-1));
-
-
-        console.log(uiContainer.position)
-        this.scene.remove(pathContainer);
-        uiContainer.add(pathContainer);
-
-        this.uiContainers.add(uiContainer)
-
-        this.scene.add(uiContainer)
-
-        // this is probably designed wrong. Need to make a new controller that knows about all the plot objects
-        // and can decide which one you are clicking on in the case of overlap
-        const draggableController = new DraggableController(this.controls, uiContainer, this.camera, this.renderer.domElement);
-        this.dragables.push(draggableController)
-    }
-
+  
     setupScene(app_model) {
 
         app_model.dom_element = viewer.renderer.domElement
@@ -217,7 +239,7 @@ class PlotViewer {
     parseSVGNodes(paths, polyline) {
         console.log(paths)
         console.log(polyline)
-
+        var segments = []
         polyline.forEach(path => {
             var points = path.attributes.points.value.split(" ")
             var segment = points.map(p => [Number(p.split(",")[0]), Number(p.split(",")[1])])
@@ -230,20 +252,20 @@ class PlotViewer {
             console.log(parsed)
             if (parsed.current != null) {
                 var segment = parsed.current.points.map(p => [p.main.x, p.main.y])
-                this.segments.push(segment)
+                segments.push(segment)
             }
 
             parsed.curveshapes.forEach(c => {
                 if (c && c.points != null) {
                     curve = c.points.map(p => [p.main.x, p.main.y])
-                    this.segments.push(curve)
+                    segments.push(curve)
                     console.log(curve)
                 }
             })
         })
 
         this.container = new THREE.Object3D()
-        this.segments.forEach(segment => {
+        segments.forEach(segment => {
             const points = segment.map(s => new THREE.Vector3(s[0], s[1], 0))
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, this.outlineMaterial);

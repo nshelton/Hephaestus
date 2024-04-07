@@ -39,14 +39,9 @@ class FileExplorer {
         this.current_project_file_handle = entry
         const file = await entry.getFile();
         const contents = await this.readFileContents(file);
-        console.log(contents)
-    
-        if (contents.paths) {
-            viewer.ClearAll()
-            contents.paths.forEach( (path, i) => {
-                createPlot(path)
-            })
-        }
+      
+        this.loadedCallback(contents)
+       
     }
 
      setupDragExplorer = function() {
