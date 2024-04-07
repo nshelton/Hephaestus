@@ -1,9 +1,19 @@
 
 class CanvasControls {
+    MODE = {
+        NONE:0,
+        HOVER_CANVAS:1,
+        HOVER_OBJECT_SCALE:2,
+        HOVER_OBJECT_MOVE:3,
+        MOVE_CANVAS:4,
+        MOVE_OBJECT:5,
+        SCALE_OBJECT:6,
+    }
+
     constructor(appmodel) {
+
         this.screen = { left: 0, top: 0, width: 0, height: 0 };
         this.appmodel = appmodel
-        var _this = this;
 
         this.domElement = appmodel.dom_element
         var box = this.domElement.getBoundingClientRect()
@@ -11,21 +21,23 @@ class CanvasControls {
         this.aspect = box.height / box.width
         this.zoom = 300
 
-        this.mouse = new THREE.Vector2();
         this.mouseOnScreen = new THREE.Vector2();
         this.raycasterMouse = new THREE.Vector2();
         this.hover_id = ""
+
+        this.initialScale = 1
+        this.initialDistance = 0
 
         this.raycaster = new THREE.Raycaster();
         this.intersection = new THREE.Vector3();
         this.offset = new THREE.Vector3();
         this.backplane = new THREE.Plane();
         this.backplane.setFromNormalAndCoplanarPoint(
-            new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0));
+            new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 0));
 
         this.canvasPosition = { x: this.appmodel.camera_position.x, y: this.appmodel.camera_position.y };
 
-        this.mode = false;
+        this.mode = this.MODE.NONE;
         this.enabled = true;
 
         this.panStart = new THREE.Vector2()
@@ -99,7 +111,7 @@ class CanvasControls {
         //     return
         // }
 
-        if (this.mode == "translateCanvas") {
+        if (this.mode == this.MODE.MOVE_CANVAS) {
             this.panCamera()
             this.panStart.copy(this.panEnd)
         }
@@ -125,15 +137,22 @@ class CanvasControls {
         const plot_model = this.appmodel.getPlotById(this.hover_id)
 
         if (plot_model) {
-            this.mode = 'translateObject';
-            this.offset.copy(this.intersection).sub(plot_model.position);
+            if (this.mode == this.MODE.HOVER_OBJECT_MOVE) {
+                this.mode = this.MODE.MOVE_OBJECT;
+                this.offset.copy(this.intersection).sub(plot_model.position);
+            }
+            if (this.mode == this.MODE.HOVER_OBJECT_SCALE) {
+                this.mode = this.MODE.SCALE_OBJECT;
+                this.initialScale = plot_model.scale;
+                const center = plot_model.bbox.getCenter(new THREE.Vector3());
+                this.initialDistance = this.intersection.distanceTo(center);
+            }
+
         } else {
             this.panStart.copy(this.mouseOnScreen);
             this.panEnd.copy(this.panStart)
-            this.mode = "translateCanvas";
-
+            this.mode = this.MODE.MOVE_CANVAS;
         }
-
 
         document.addEventListener('mouseup', this.mouseup.bind(this), false);
     }
@@ -145,10 +164,6 @@ class CanvasControls {
     mousemove(event) {
 
         var rect = document.documentElement.getBoundingClientRect()
-        this.mouse.set(
-            ((event.clientX - rect.left) / rect.width) * 2 - 1,
-            ((event.clientY - rect.top) / rect.height) * 2 + 1
-        )
 
         this.mouseOnScreen.set(
             (event.pageX - this.screen.left) / this.screen.width,
@@ -162,9 +177,11 @@ class CanvasControls {
         this.raycaster.setFromCamera(this.raycasterMouse, this.appmodel.camera);
         this.raycaster.ray.intersectPlane(this.backplane, this.intersection)
 
-        if (this.mode == "translateCanvas") {
+        if (this.mode == this.MODE.MOVE_CANVAS) {
+
             this.panEnd.copy(this.mouseOnScreen);
-        } else if (this.mode == "translateObject") {
+
+        } else if (this.mode == this.MODE.MOVE_OBJECT) {
 
             const plot_model = this.appmodel.getPlotById(this.hover_id)
 
@@ -172,8 +189,17 @@ class CanvasControls {
             plot_model.position.x = this.intersection.x
             plot_model.position.y = this.intersection.y
             
+        } else if (this.mode == this.MODE.SCALE_OBJECT) {
+            const plot_model = this.appmodel.getPlotById(this.hover_id)
+            const center = plot_model.bbox.getCenter(new THREE.Vector3());
+    
+            const currentDistance = this.intersection.distanceTo(center);
+            const scaleFactor = currentDistance / this.initialDistance;
+    
+            plot_model.scale = this.initialScale * scaleFactor;
 
         } else {
+            this.mode = this.MODE.NONE;
 
             this.hover_id = ""
             this.appmodel.plot_models.forEach(plot_model => {
@@ -181,9 +207,24 @@ class CanvasControls {
                 if (!plot_model.bbox) return
     
                 if (this.isInBox(this.intersection, plot_model.bbox)) {
-                    plot_model.state = "hover"
                     this.hover_id = plot_model.id
-                    this.domElement.style.cursor = 'move';
+
+                    const center = plot_model.bbox.getCenter(new THREE.Vector3());
+                    const distToCenter = center.distanceTo(this.intersection);
+                    var bbox_dim =  plot_model.bbox.getSize(new THREE.Vector3());
+                    const largest_edge = Math.max(bbox_dim.x, bbox_dim.y) / 4;
+
+                    if (distToCenter <= largest_edge) {
+                        this.domElement.style.cursor = 'move'; 
+                        this.mode = this.MODE.HOVER_OBJECT_MOVE;
+                        plot_model.state = "hover_move"
+        
+                    } else {
+                        this.mode = this.MODE.HOVER_OBJECT_SCALE;
+                        this.domElement.style.cursor = 'n-resize';
+                        plot_model.state = "hover_scale"
+                    }
+                    
     
                 } else {
                     plot_model.state = "none"

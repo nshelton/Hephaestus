@@ -107,16 +107,19 @@ class DraggableController {
         const largest_edge = Math.max(bbox_dim.x, bbox_dim.y) / 4;
 
         if (distToCenter <= largest_edge) {
+
             this.domElement.style.cursor = 'move'; // Change cursor for scaling
             this.mode = 'translate';
             this.offset.copy(this.intersection).sub(this.object.position);
             this.domElement.style.cursor = 'move';
 
         } else {
+            
             this.mode = 'scale';
             this.domElement.style.cursor = 'n-resize'; // Change cursor for scaling
             this.initialScale.copy(this.object.scale);
             this.initialDistance = this.intersection.distanceTo(center);
+        
         }
     }
 

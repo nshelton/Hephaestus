@@ -14,8 +14,8 @@ class PlotViewer {
         this.camera = new THREE.OrthographicCamera(0, 100, 0, 100, 1, 100);
         this.scene = new THREE.Scene();
 
-        
-        this.redFillMeshMaterial = new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: false, side:THREE.DoubleSide });
+
+        this.redFillMeshMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false, side: THREE.DoubleSide });
         this.yellowMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: false });
         this.reddishMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false });
         this.backgroundMaterial = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true });
@@ -24,10 +24,6 @@ class PlotViewer {
 
         this.upMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
         this.downMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
-
-
-        this.hoverMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00,  wireframe: true });
-        this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x888888,  wireframe: true });
 
 
         this.darkScheme = false
@@ -57,7 +53,8 @@ class PlotViewer {
         var bbox = new THREE.Box3().setFromObject(container);
 
         var geometry = new THREE.PlaneGeometry(bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y, 1, 1);
-        var container_outline = new THREE.Mesh(geometry, this.outlineMaterial);
+        var container_outline = new THREE.Mesh(geometry, 
+            new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true }));
 
         container_outline.position.copy(bbox.getCenter(new THREE.Vector3()));
         container.add(container_outline);
@@ -75,7 +72,7 @@ class PlotViewer {
         delete this.id_to_container[id]
     }
 
-    
+
     updateFromModel(app_model) {
 
         this.camera.left = - app_model.zoom / 2
@@ -94,16 +91,18 @@ class PlotViewer {
             if (idx == -1) {
                 this.createPlotView(plot_model)
             }
-            
-            const container = this.id_to_container[plot_model.id] 
+
+            const container = this.id_to_container[plot_model.id]
             plot_model.bbox.setFromObject(container);
             container.position.set(plot_model.position.x, plot_model.position.y, 0)
             container.scale.set(plot_model.scale, plot_model.scale, plot_model.scale)
 
-            if (plot_model.state == "hover") {
-                container.uiOutline.material = this.hoverMaterial
-            } else {
-                container.uiOutline.material = this.outlineMaterial
+            if (plot_model.state == "hover_move") {
+                container.uiOutline.material.color.setHex(0x00ff00);
+            } else if (plot_model.state == "hover_scale") {
+                container.uiOutline.material.color.setHex(0x00bbff);
+            }else {
+                container.uiOutline.material.color.setHex(0x888888);
             }
             current_ids.splice(idx, 1)
 
@@ -202,9 +201,9 @@ class PlotViewer {
 
         this.camera.lookAt(new THREE.Vector3());
 
-        const geometry = new THREE.PlaneGeometry(230,420, 230 / 10,420 / 10);
+        const geometry = new THREE.PlaneGeometry(230, 420, 230 / 10, 420 / 10);
         const plane = new THREE.Mesh(geometry, this.backgroundMaterial);
-        plane.position.set(230 / 2,420 / 2, -0.001)
+        plane.position.set(230 / 2, 420 / 2, -0.001)
         this.scene.add(plane);
 
         // todo wtf are these numberas and why are they not a3width/height
