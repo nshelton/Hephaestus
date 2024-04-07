@@ -83,8 +83,8 @@ function init() {
             console.log("bad file!", loaded_file)
             return
         }
-        
-        app_model.paths = []
+
+        app_model.plot_models = []
         loaded_file.paths.forEach((path, i) => {
             createPlot(path)
         })

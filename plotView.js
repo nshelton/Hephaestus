@@ -64,6 +64,12 @@ class PlotViewer {
     getIdsInView() {
         return Object.getOwnPropertyNames(this.ids_to_threeObjects)
     }
+
+    removeViewWithId(id) {
+        console.log("remove", id)
+        this.scene.remove(this.ids_to_threeObjects[id])
+        delete this.ids_to_threeObjects[id]
+    }
     
     updateFromModel(app_model) {
 
@@ -92,6 +98,12 @@ class PlotViewer {
         })
 
         // console.log(current_ids)
+
+        current_ids.forEach(guid => {
+            this.removeViewWithId(guid)
+        })
+
+
         // check if anything changed, use ID i guess
 
 
