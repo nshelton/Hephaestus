@@ -8,15 +8,15 @@ uuidv4 = function() {
 
 
 class AppModel {
-
     dom_element = undefined
-
-    camera_position = {x:0, y:0}
+    camera_position = {x:100, y:100}
     zoom = 100
     aspect = 1
-
     plot_models = []
 
+    getPlotById(id) {
+        return this.plot_models.find((p) => p.id == id);
+    }
 }
 
 

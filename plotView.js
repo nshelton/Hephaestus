@@ -1,6 +1,6 @@
 
 class PlotViewer {
-    
+
 
 
     a3Width = 297
@@ -14,90 +14,103 @@ class PlotViewer {
         this.camera = new THREE.OrthographicCamera(0, 100, 0, 100, 1, 100);
         this.scene = new THREE.Scene();
 
-        this.outlineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
-
+        
+        this.redFillMeshMaterial = new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: false, side:THREE.DoubleSide });
         this.yellowMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: false });
         this.reddishMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false });
         this.backgroundMaterial = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true });
-        this.originmaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.5 });
+        this.greenMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, transparent: true, opacity: 0.5 });
         this.bbmaterial = new THREE.MeshBasicMaterial({ color: 0x88ff88, wireframe: true, transparent: true, opacity: 0.5 });
 
         this.upMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
         this.downMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
+
+        this.hoverMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00,  wireframe: true });
+        this.outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x888888,  wireframe: true });
+
+
         this.darkScheme = false
 
-        this.ids_to_threeObjects = {}
-
+        this.id_to_container = {}
     }
 
     createPlotView(plot_model) {
         console.log("CREATED PLOT", plot_model.id)
-        var pathContainer = new THREE.Object3D()
+        var container = new THREE.Object3D()
+        container.paths = []
 
         plot_model.paths.forEach(path => {
-            const points = path.map(s => new THREE.Vector3(s[0], s[1], 1))
+            const points = path.map(s => new THREE.Vector3(s[0], s[1], 0))
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, this.yellowMaterial);
 
             this.lineObjects.push(line)
             this.segments.push(points)
 
-            pathContainer.add(line)
+            container.add(line)
+            container.paths.push(line)
         })
-        pathContainer.position.set(plot_model.position.x, plot_model.position.y, 0)
-        this.scene.add(pathContainer)
-        
-        var uiContainer = new THREE.Object3D()
-        const bbox = new THREE.Box3().setFromObject(pathContainer);
-        uiContainer.position.copy(bbox.getCenter(new THREE.Vector3()));
-        pathContainer.position.copy(bbox.getCenter(new THREE.Vector3()).multiplyScalar(-1));
 
-        console.log(uiContainer.position)
-        this.scene.remove(pathContainer);
-        uiContainer.add(pathContainer);
+        this.scene.add(container)
 
-        this.scene.add(uiContainer)
-        this.ids_to_threeObjects[plot_model.id] = uiContainer
+        var bbox = new THREE.Box3().setFromObject(container);
+
+        var geometry = new THREE.PlaneGeometry(bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y, 1, 1);
+        var container_outline = new THREE.Mesh(geometry, this.outlineMaterial);
+
+        container_outline.position.copy(bbox.getCenter(new THREE.Vector3()));
+        container.add(container_outline);
+
+        container.uiOutline = container_outline
+        this.id_to_container[plot_model.id] = container
     }
 
     getIdsInView() {
-        return Object.getOwnPropertyNames(this.ids_to_threeObjects)
+        return Object.getOwnPropertyNames(this.id_to_container)
     }
 
     removeViewWithId(id) {
-        this.scene.remove(this.ids_to_threeObjects[id])
-        delete this.ids_to_threeObjects[id]
+        this.scene.remove(this.id_to_container[id])
+        delete this.id_to_container[id]
     }
+
     
     updateFromModel(app_model) {
 
         this.camera.left = - app_model.zoom / 2
-        this.camera.right =  app_model.zoom / 2
+        this.camera.right = app_model.zoom / 2
         this.camera.top = - app_model.zoom / 2 * app_model.aspect
         this.camera.bottom = app_model.zoom / 2 * app_model.aspect
         this.camera.position.set(app_model.camera_position[0], app_model.camera_position[1], 2)
         this.camera.updateProjectionMatrix()
 
         app_model.camera = this.camera
-        
-        let current_ids = this.getIdsInView()
-        app_model.plot_models.forEach(plot => {
 
-            let idx = current_ids.indexOf(plot.id)
+        let current_ids = this.getIdsInView()
+        app_model.plot_models.forEach(plot_model => {
+
+            let idx = current_ids.indexOf(plot_model.id)
             if (idx == -1) {
-                this.createPlotView(plot)
+                this.createPlotView(plot_model)
             }
-            plot.bbox.setFromObject(this.ids_to_threeObjects[plot.id]);
+            
+            const container = this.id_to_container[plot_model.id] 
+            plot_model.bbox.setFromObject(container);
+            container.position.set(plot_model.position.x, plot_model.position.y, 0)
+            container.scale.set(plot_model.scale, plot_model.scale, plot_model.scale)
+
+            if (plot_model.state == "hover") {
+                container.uiOutline.material = this.hoverMaterial
+            } else {
+                container.uiOutline.material = this.outlineMaterial
+            }
             current_ids.splice(idx, 1)
 
         })
 
         // remove stale ids
         current_ids.forEach(guid => { this.removeViewWithId(guid) })
-
-
-
 
     }
 
@@ -110,7 +123,7 @@ class PlotViewer {
             this.yellowMaterial.color = new THREE.Color("#ffff00")
             this.reddishMaterial.color = new THREE.Color("#e61d5f")
             this.backgroundMaterial.color = new THREE.Color("#333333")
-            this.originmaterial.color = new THREE.Color("#00ff00")
+            this.greenMaterial.color = new THREE.Color("#00ff00")
             this.bbmaterial.color = new THREE.Color("#88ff88")
 
         } else {
@@ -119,11 +132,10 @@ class PlotViewer {
             this.yellowMaterial.color = new THREE.Color("#666600")
             this.reddishMaterial.color = new THREE.Color("#e61d5f")
             this.backgroundMaterial.color = new THREE.Color("#aaaaaa")
-            this.originmaterial.color = new THREE.Color("#00ff00")
+            this.greenMaterial.color = new THREE.Color("#00ff00")
             this.bbmaterial.color = new THREE.Color("#88ff88")
         }
     }
-
 
     createPlotList() {
 
@@ -181,49 +193,21 @@ class PlotViewer {
         this.scene.add(this.debugContainer)
     }
 
-    ClearAll() {
-        for (var i = this.uiContainers.children.length - 1; i >= 0; i--) {
-            obj = this.uiContainers.children[i];
-            this.uiContainers.remove(obj);
-        }
-
-        this.lineObjects = []
-        this.segments = []
-
-        this.dragables.forEach(d => {
-
-            // tear down dragables
-        })
-
-    }
-
-  
     setupScene(app_model) {
 
         app_model.dom_element = viewer.renderer.domElement
 
-        const view = document.getElementById("plotViewContainer")
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById("plotViewContainer").appendChild(this.renderer.domElement);
 
         this.camera.lookAt(new THREE.Vector3());
 
-        const geometry = new THREE.PlaneGeometry(this.a3Height, this.a3Width, this.a3Height / 10, this.a3Width / 10);
-
+        const geometry = new THREE.PlaneGeometry(230,420, 230 / 10,420 / 10);
         const plane = new THREE.Mesh(geometry, this.backgroundMaterial);
-        plane.position.set(this.a3Height / 2, this.a3Width / 2, 0)
+        plane.position.set(230 / 2,420 / 2, -0.001)
         this.scene.add(plane);
 
-        const points = [];
-        points.push(new THREE.Vector3(this.a3Height, 0, 0));
-        points.push(new THREE.Vector3(0, 0, 0));
-        points.push(new THREE.Vector3(0, this.a3Width, 0));
-
-        const linegeometry = new THREE.BufferGeometry().setFromPoints(points);
-
-        const line = new THREE.Line(linegeometry, this.reddishMaterial);
-        this.scene.add(line);
-
+        // todo wtf are these numberas and why are they not a3width/height
         const points2 = [];
         points2.push(new THREE.Vector3(280, 0, 0));
         points2.push(new THREE.Vector3(280, 190, 0));
@@ -233,6 +217,13 @@ class PlotViewer {
 
         const line2 = new THREE.Line(linegeometry2, this.reddishMaterial);
         this.scene.add(line2);
+
+
+        var dotgeometry = new THREE.PlaneGeometry(1, 1, 1, 1);
+        var originDot = new THREE.Mesh(dotgeometry, this.greenMaterial);
+        this.scene.add(originDot);
+
+        this.updateFromModel(app_model)
 
     }
 

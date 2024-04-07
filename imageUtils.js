@@ -394,23 +394,6 @@ imageUtils = function () {
         return paths
     }
 
-    this.star = function () {
-        paths = []
-        nLines = 50
-        r = 20
-        for (var i = 0; i < nLines; i++) {
-            theta = Math.PI * i / nLines
-            x = r * Math.cos(theta)
-            y = r * Math.sin(theta)
-            paths.push([[x, y], [-x, -y]])
-        }
-
-        // paths = pathUtils.transform(paths, 2, 50 + 20, 130 + 10 * (Math.sqrt(3) / 2))
-        paths = pathUtils.transform(paths, 2, 50 + 20, 50)
-        // paths = pathUtils.transform(paths, 2, 50, 50)
-        return paths
-    }
-
     this.randomGradient = function () {
         return this.gradient(Math.random() * 100, Math.random() * 100, Math.random() * 100, Math.random() * 20)
     }

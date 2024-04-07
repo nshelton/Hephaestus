@@ -13,6 +13,8 @@ class CanvasControls {
 
         this.mouse = new THREE.Vector2();
         this.mouseOnScreen = new THREE.Vector2();
+        this.raycasterMouse = new THREE.Vector2();
+        this.hover_id = ""
 
         this.raycaster = new THREE.Raycaster();
         this.intersection = new THREE.Vector3();
@@ -21,16 +23,10 @@ class CanvasControls {
         this.backplane.setFromNormalAndCoplanarPoint(
             new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0));
 
-        this.canvasPosition = { x: this.zoom / 2, y: this.zoom / 2 };
+        this.canvasPosition = { x: this.appmodel.camera_position.x, y: this.appmodel.camera_position.y };
 
-        this.canvasMove = false;
+        this.mode = false;
         this.enabled = true;
-
-        this.updateModel = function () {
-            this.appmodel.zoom = this.zoom
-            this.appmodel.aspect = this.aspect
-            this.appmodel.camera_position = [this.canvasPosition.x, this.canvasPosition.y]
-        }
 
         this.panStart = new THREE.Vector2()
         this.panEnd = new THREE.Vector2()
@@ -65,6 +61,12 @@ class CanvasControls {
         this.update();
     }
 
+    updateModel() {
+        this.appmodel.zoom = this.zoom
+        this.appmodel.aspect = this.aspect
+        this.appmodel.camera_position = [this.canvasPosition.x, this.canvasPosition.y]
+    }
+
     panCamera() {
 
         var mouseChange = new THREE.Vector2()
@@ -76,8 +78,6 @@ class CanvasControls {
             this.canvasPosition.y -= mouseChange.y * this.zoom
 
             this.updateModel()
-
-            console.log("app_model.camera_position", app_model.camera_position)
         }
 
     }
@@ -99,7 +99,7 @@ class CanvasControls {
         //     return
         // }
 
-        if (this.canvasMove) {
+        if (this.mode == "translateCanvas") {
             this.panCamera()
             this.panStart.copy(this.panEnd)
         }
@@ -122,11 +122,24 @@ class CanvasControls {
         event.preventDefault();
         event.stopPropagation();
 
-        this.panStart.copy(this.mouseOnScreen);
-        this.panEnd.copy(this.panStart)
-        this.canvasMove = true;
+        const plot_model = this.appmodel.getPlotById(this.hover_id)
+
+        if (plot_model) {
+            this.mode = 'translateObject';
+            this.offset.copy(this.intersection).sub(plot_model.position);
+        } else {
+            this.panStart.copy(this.mouseOnScreen);
+            this.panEnd.copy(this.panStart)
+            this.mode = "translateCanvas";
+
+        }
+
 
         document.addEventListener('mouseup', this.mouseup.bind(this), false);
+    }
+
+    isInBox(p, bbox) {
+        return p.x > bbox.min.x && p.x < bbox.max.x && p.y > bbox.min.y && p.y < bbox.max.y
     }
 
     mousemove(event) {
@@ -141,35 +154,48 @@ class CanvasControls {
             (event.pageX - this.screen.left) / this.screen.width,
             (event.pageY - this.screen.top) / this.screen.height
         )
-        this.raycaster.setFromCamera(this.mouse, this.appmodel.camera);
-        this.intersection = this.raycaster.ray.intersectPlane(this.backplane, this.intersection)
 
-        if (this.canvasMove) {
+        this.raycasterMouse.set(
+            (event.clientX / window.innerWidth) * 2 - 1,
+            - (event.clientY / window.innerHeight) * 2 + 1)
+
+        this.raycaster.setFromCamera(this.raycasterMouse, this.appmodel.camera);
+        this.raycaster.ray.intersectPlane(this.backplane, this.intersection)
+
+        if (this.mode == "translateCanvas") {
             this.panEnd.copy(this.mouseOnScreen);
+        } else if (this.mode == "translateObject") {
+
+            const plot_model = this.appmodel.getPlotById(this.hover_id)
+
+            this.intersection.sub(this.offset)
+            plot_model.position.x = this.intersection.x
+            plot_model.position.y = this.intersection.y
+            
+
+        } else {
+
+            this.hover_id = ""
+            this.appmodel.plot_models.forEach(plot_model => {
+    
+                if (!plot_model.bbox) return
+    
+                if (this.isInBox(this.intersection, plot_model.bbox)) {
+                    plot_model.state = "hover"
+                    this.hover_id = plot_model.id
+                    this.domElement.style.cursor = 'move';
+    
+                } else {
+                    plot_model.state = "none"
+                    this.domElement.style.cursor = 'default';
+    
+                }
+    
+            })
+
+
         }
 
-        this.appmodel.plot_models.forEach(plotModel => {
-
-            if (!plotModel.bbox) return
-
-            // const intersects = this.raycaster.intersectObject(
-            // plotModel.bbox);
-            // console.log(plotModel.bbox)
-
-            // if (intersects.length > 0) {
-            //     print("intersects", plotModel.id)
-            //     if (!this.isHovering) {
-            //        console.log("hover")
-            //     }
-            // } else {
-            //     if (this.isHovering) {
-            //         this.isHovering = false
-            //         this.onMouseExit()
-            //     }
-            //     this.domElement.style.cursor = 'auto';
-            // }
-
-        })
 
 
     }
@@ -180,7 +206,7 @@ class CanvasControls {
         event.preventDefault();
         event.stopPropagation();
 
-        if (this.canvasMove) { this.canvasMove = false }
+        if (this.mode) { this.mode = false }
         // this.dragging = false;
 
         document.removeEventListener('mouseup', this.mouseup);

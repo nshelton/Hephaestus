@@ -11,9 +11,13 @@ app_model = new AppModel()
 pathUtils = new PathUtils()
 
 
-function createPlot(paths) {
+function createPlot(paths, transform) {
     // currentPlotObjects.push(paths)
-    const new_model = new PlotModel(paths, { x: 0, y: 0 }, 1)
+    const s = transform.scale || 1
+    const x = transform.x || 0
+    const y = transform.y || 0
+
+    const new_model = new PlotModel(paths, { x: x, y: y }, s)
     app_model.plot_models.push(new_model)
     viewer.updateFromModel(app_model)
 
@@ -124,9 +128,8 @@ function init() {
 
         var textPath = pathUtils.text(new Date().toLocaleString())
         textPath.flat(2)
-        var textPath = pathUtils.transform(textPath, 0.006, 50, 10)
-        createPlot(textPath, [0, 0])
-        createPlot(pathUtils.star(), [0, 0])
+        createPlot(textPath, { x: 10, y: 10, scale: 0.006 })
+        createPlot(pathUtils.star(), { x: 50, y: 60, scale: 2 })
         // textPath.flat(2)
         // var textPath = pathUtils.transform(textPath, 0.01, 50, 10)
         // createPlot(textPath)

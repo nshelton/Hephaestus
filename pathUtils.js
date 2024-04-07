@@ -109,7 +109,7 @@ PathUtils = function () {
         }
 
         // paths = pathUtils.transform(paths, 2, 50 + 20, 130 + 10 * (Math.sqrt(3) / 2))
-        paths = pathUtils.transform(paths, 2, 50 + 20, 50)
+        // paths = pathUtils.transform(paths, 2, 50 + 20, 50)
         // paths = pathUtils.transform(paths, 2, 50, 50)
         return paths
     }
