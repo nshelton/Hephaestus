@@ -38,8 +38,8 @@ class DraggableController {
         this.mode = null;
         this.isHovering = false;
 
-        this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+        this.raycaster = new THREE.Raycaster();
         this.intersection = new THREE.Vector3();
         this.offset = new THREE.Vector3();
 

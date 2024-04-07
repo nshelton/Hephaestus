@@ -27,7 +27,8 @@ class PlotModel {
         this.paths = paths
         this.scale = scale
         this.id = uuidv4()
-
+        this.bbox = new THREE.Box3()
+        this.state = "none"
         return this
     }
 }

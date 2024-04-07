@@ -100,7 +100,7 @@ function init() {
     customGui.init(driver)
     customGui.update(driver.queue, driver.plotter);
 
-    controls = new THREE.InteractiveControls(app_model);
+    controls = new CanvasControls(app_model);
 
 
     render_loop = function () {

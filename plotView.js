@@ -66,7 +66,6 @@ class PlotViewer {
     }
 
     removeViewWithId(id) {
-        console.log("remove", id)
         this.scene.remove(this.ids_to_threeObjects[id])
         delete this.ids_to_threeObjects[id]
     }
@@ -80,31 +79,24 @@ class PlotViewer {
         this.camera.position.set(app_model.camera_position[0], app_model.camera_position[1], 2)
         this.camera.updateProjectionMatrix()
 
-        var app_model_ids = []
-
+        app_model.camera = this.camera
+        
         let current_ids = this.getIdsInView()
-        // console.log(current_ids)
         app_model.plot_models.forEach(plot => {
-            app_model_ids.push(plot.id)
+
             let idx = current_ids.indexOf(plot.id)
             if (idx == -1) {
                 this.createPlotView(plot)
             }
-
+            plot.bbox.setFromObject(this.ids_to_threeObjects[plot.id]);
             current_ids.splice(idx, 1)
 
-            // if (!this.plotViewObject_ids.has(plot.id)) {
-            // }
         })
 
-        // console.log(current_ids)
-
-        current_ids.forEach(guid => {
-            this.removeViewWithId(guid)
-        })
+        // remove stale ids
+        current_ids.forEach(guid => { this.removeViewWithId(guid) })
 
 
-        // check if anything changed, use ID i guess
 
 
     }
