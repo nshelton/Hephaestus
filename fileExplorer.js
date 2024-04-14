@@ -1,5 +1,5 @@
 class FileExplorer {
-   
+
     current_project_file_handle = null;
 
     readFileContents = async (file) => {
@@ -11,58 +11,56 @@ class FileExplorer {
             return null; // Return null if there's an error reading the file
         }
     }
-    
+
     SaveFileEntry = async () => {
         console.log(this.current_project_file_handle, 'CTRL + S');
 
         const writable = await this.current_project_file_handle.createWritable();
         const date = new Date()
         const date_time_string = date.toLocaleDateString() + " " + date.toLocaleTimeString()
-        
+
         const data_to_save = {
-            "paths" : this.view.getCurrentPlotState,
-            "timestamp" : date_time_string,
-            "thumbnail"  : []
+            "paths": this.view.getCurrentPlotState,
+            "timestamp": date_time_string,
+            "thumbnail": []
         }
-    
-        const contents = JSON.stringify(data_to_save, function(key, val) {
+
+        const contents = JSON.stringify(data_to_save, function (key, val) {
             return val.toFixed ? Number(val.toFixed(3)) : val;
         })
-        
+
         await writable.write(contents);
         await writable.close();
     }
-    
+
     LoadFileEntry = async (entry) => {
         console.log(entry)
         document.title = entry.name
         this.current_project_file_handle = entry
         const file = await entry.getFile();
         const contents = await this.readFileContents(file);
-      
         this.loadedCallback(contents)
-       
     }
 
-     setupDragExplorer = function() {
+    setupDragExplorer = function () {
         const explorer_node = document.getElementById("explorer");
         const gui_node = document.getElementById("gui");
-    
+
         const BORDER_SIZE = 20;
         let m_pos;
-        function resize(e){
+        function resize(e) {
             explorer_node.style.width = e.x + "px";
             gui_node.style.left = e.x + "px";
         }
-    
-        explorer_node.addEventListener("mousedown", function(e){
-            currentWidth = parseInt(getComputedStyle(explorer_node, '').width) 
+
+        explorer_node.addEventListener("mousedown", function (e) {
+            currentWidth = parseInt(getComputedStyle(explorer_node, '').width)
             if (Math.abs(e.offsetX - currentWidth) < BORDER_SIZE) {
                 document.addEventListener("mousemove", resize, false);
             }
         }, false);
-    
-        document.addEventListener("mouseup", function(){
+
+        document.addEventListener("mouseup", function () {
             document.removeEventListener("mousemove", resize, false);
         }, false);
     }
@@ -80,75 +78,84 @@ class FileExplorer {
                 var projectEntryInfo = document.createElement("span")
                 projectEntry.appendChild(projectEntryTitle)
                 projectEntry.appendChild(projectEntryInfo)
-    
+
                 projectEntry.classList.add('explorerEntry')
                 projectEntryTitle.innerText = project_name
-    
+
                 const file = await entry.getFile();
                 const contents = await this.readFileContents(file);
                 console.log(contents)
-                console.log(contents.timestamp)
-                const time = contents.timestamp | "Notime"
+                console.log(contents)
+                const time = contents.timestamp || contents.modified_time || "Notime"
                 console.log(time)
                 projectEntryInfo.innerHTML += contents.timestamp + "<br>"
                 var totalVert = 0
                 var totalLine = 0
-                contents.paths.forEach( p => {
-                    var total = p.reduce((acc, current) =>  current.length + acc, 0)
-                    totalVert += total 
-                    totalLine +=  p.length 
-                })
-    
-                projectEntryInfo.innerHTML += totalVert +" vert "+totalLine+" lines"
-                
+                if (contents.paths) {
+                    contents.paths.forEach(p => {
+                        var total = p.reduce((acc, current) => current.length + acc, 0)
+                        totalVert += total
+                        totalLine += p.length
+                    })
+                }
+
+                projectEntryInfo.innerHTML += totalVert + " vert " + totalLine + " lines"
+
                 explorer_node.appendChild(projectEntry)
-                
-                projectEntry.addEventListener("click", function(e){
+
+                projectEntry.addEventListener("click", function (e) {
                     this.LoadFileEntry(entry)
                 }.bind(this))
             }
         }
-      
+
         document.removeEventListener("click", this.printFilesInDirectory);// Add onclick eventListener 
     };
 
-    saveProject = function(plots, name) {
+    saveProject = async function (app_model, name) {
         const date = new Date()
         const date_time_string = date.toLocaleDateString() + " " + date.toLocaleTimeString()
-        
-        const data_to_save = {
-            "paths" : plots,
-            "timestamp" : date_time_string,
-            "thumbnail"  : []
+        if (!app_model.created_time) {
+            app_model.created_time = date_time_string
         }
-    
-        var fileContent = JSON.stringify(data_to_save, function(key, val) {
-            return val.toFixed ? Number(val.toFixed(3)) : val;
+
+        app_model.modified_time = date_time_string
+
+        var fileContent = JSON.stringify(app_model, function (key, val) {
+            return val && val.toFixed ? Number(val.toFixed(3)) : val;
         })
-        
-        var bb = new Blob([fileContent ], { type: 'text/plain' });
-        var a = document.createElement('a');
-        a.download = 'download.json';
-        a.href = window.URL.createObjectURL(bb);
-        a.click();
+
+        var contents = new Blob([fileContent], { type: 'text/plain' });
+
+        const writable = await this.current_project_file_handle.createWritable();
+        await writable.write(contents);
+        await writable.close();
     }
 
-    constructor(loadedCallback) {
+    constructor(loadedCallback, saveCallback) {
+        this.app_model = app_model
         this.loadedCallback = loadedCallback;
+        this.saveCallback = saveCallback;
         const explorer_node = document.getElementById("explorer");
+        
+        
         var load_button = document.createElement("button")
         load_button.innerText = "Open Folder"
         explorer_node.appendChild(load_button)
 
-        load_button.addEventListener("click", function(e){
+        load_button.addEventListener("click", function (e) {
             this.loadDirectory()
+
         }.bind(this))
 
-        document.addEventListener('keydown', e => {
-            if (e.keyCode === 83 && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
-                e.preventDefault();
-                this.SaveFileEntry();
-            }
-        });
+        var save_button = document.createElement("button")
+        save_button.innerText = "save"
+        explorer_node.appendChild(save_button)
+
+        save_button.addEventListener("click", function (e) {
+            this.saveCallback()
+        }.bind(this))
+
+
     }
 }

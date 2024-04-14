@@ -33,21 +33,25 @@ Axidraw = function () {
         this.writer = this.port.writable.getWriter();
         this.reader = this.port.readable.getReader();
         this.connected = true
-
-
     }
 
-    this.penUp = async function (duration = 100) { return await this.writeCommand(`SP,1,${duration}`), this.writeCommand("XM,50,0,0") }
-    this.penDown = async function (duration = 100) { return await this.writeCommand(`SP,0,${duration}`), this.writeCommand("XM,50,0,0") }
+    this.penUp = async function (duration) {
+        this.writeCommand(`SP,1,10`)
+        //this is just a delay since there is a bug in the delay of SP
+        this.writeCommand("SM,"+Math.ceil(duration)+",0,0")
+    }
+    this.penDown = async function (duration) {
+        this.writeCommand("SP,0,10") 
+        //this is just a delay since there is a bug in the delay of SP
+        this.writeCommand("SM,"+Math.ceil(duration)+",0,0")
+    }
     this.move = async function (x, y) { 
         var length = Math.floor(Math.sqrt(x * x + y * y))
         if(length == 0 )
             return; 
         var time = length / this.speed
-        console.log("time", time, "length", length)
 
         return await this.writeCommand(`XM,${Math.ceil(time)},${x},${y}`) 
-    
     }
 
     this.disableMotor = async function () { return await this.writeCommand("EM,0,0") }
@@ -70,7 +74,7 @@ Axidraw = function () {
     }
 
     this.close = async function () {
-        await this.penUp()
+        await this.penUp(1000)
         await this.disableMotor()
         await this.readResult()
         // await this.writer.releaseLock();
@@ -102,7 +106,7 @@ Axidraw = function () {
         var count = (response.match(/OK/g) || []).length;
         this.commandsCompleted += count
 
-        console.log(count, "response \t " + response)
+        console.log(count, "response")
         return response
     }
 

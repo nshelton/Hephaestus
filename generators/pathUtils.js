@@ -12,6 +12,98 @@ PathUtils = function () {
         return points
     }
 
+    this.upDownTest = function (rule) {
+        let result = []
+
+        result.push(this.rectPath(-30,-30,10,10))
+        result.push(this.rectPath(20,20,10,10))
+
+        result.push(this.rectPath(20,-30,10,10))
+        result.push(this.rectPath(-30,20,10,10))
+
+        nLines = 10
+        r = 20
+        for (var i = 0; i < nLines; i++) {
+            theta = Math.PI * i / nLines
+            x = r * Math.cos(theta)
+            y = r * Math.sin(theta)
+            result.push([[x, y], [-x, -y]])
+        }
+
+        return result;
+
+    }
+
+
+    this.wolfram = function (rule) {
+        // Define initial state
+        generations = 200
+        const width = 200
+        const initialState = Array(width).fill(0);
+        initialState[Math.floor(initialState.length / 2)] = 1;
+
+        // const initialState = Array.from({ length: width  }, () => Math.round(Math.random()));
+        console.log(initialState)
+        function applyRule(rule, left, center, right) {
+            const num = 4 * left + 2 * center + right;
+            return (rule >> num) & 1;
+        }
+
+        const coordinates = [];
+        let currentState = initialState.slice();
+
+        for (let i = 1; i < generations; i++) {
+            for (let j = 1; j < initialState.length - 1; j++) {
+                if (applyRule(rule, currentState[j - 1], currentState[j], currentState[j + 1])) {
+                    // Push coordinates for each cell that is "on"
+                    coordinates.push([j, i]);
+                }
+            }
+            // Update the current state for the next generation
+            currentState = currentState.map((_, idx) => {
+                if (idx === 0 || idx === currentState.length - 1) {
+                    return 0; // Padding cells are always "off"
+                }
+                return applyRule(rule, currentState[idx - 1], currentState[idx], currentState[idx + 1]);
+            });
+        }
+        let result = []
+        circles = coordinates.forEach(p =>
+            {
+                // result.push(this.circlePath(p[0], p[1], 0.5, 10)) 
+                result.push(this.rectPath(p[0], p[1], 1, 0.1)) 
+            })
+        return result;
+
+
+    }
+
+    this.lorenz = function (steps) {
+
+        const sigma = 10;
+        const rho = 37;
+        const beta = 2;
+        const dt = 0.005;
+
+        let x = 0.1;
+        let y = 0;
+        let z = 0;
+        let points = [];
+
+        for (let i = 0; i < steps; i++) {
+            let dx = sigma * (y - x);
+            let dy = x * (rho - z) - y;
+            let dz = x * y - beta * z;
+            x += dx * dt;
+            y += dy * dt;
+            z += dz * dt;
+            points.push([x, y]);
+        }
+
+        return [points];
+    }
+
+
     this.rectPath = function (x, y, w, h) {
         return [
             [x + 0, y + 0],
@@ -651,7 +743,7 @@ PathUtils = function () {
         diagram = voronoi.compute(sites, bbox);
 
         diagram.edges.forEach(edge => {
-           paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
+            paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
         });
 
         //   diagram.edges.forEach(edge => {

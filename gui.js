@@ -47,7 +47,7 @@ PlotterGUI = function() {
             theButton.style.left = x
             theButton.style.bottom = y
             theButton.style.border = "1px solid white"
-            theButton.onclick = onclick
+            theButton.onclick = onclick.bind(app)
             theButton.innerText = text
             theButton.style.width = "100px"
             return theButton
@@ -137,7 +137,7 @@ PlotterGUI = function() {
         this.speedSlider.style.width = "200px"
         this.guiNode.appendChild(this.speedSlider)
 
-        this.speedValueText = makeText("speed", 600, 00)
+        this.speedValueText = makeText("speed", 600, 0)
         this.guiNode.appendChild(this.speedValueText)
 
         this.debugText = document.createElement("div")

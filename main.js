@@ -10,7 +10,6 @@ app_model = new AppModel()
 // imageUtils = new imageUtils()
 pathUtils = new PathUtils()
 
-
 function createPlot(paths, transform) {
     // currentPlotObjects.push(paths)
     const s = transform.scale || 1
@@ -20,7 +19,6 @@ function createPlot(paths, transform) {
     const new_model = new PlotModel(paths, { x: x, y: y }, s)
     app_model.plot_models.push(new_model)
     viewer.updateFromModel(app_model)
-
 }
 
 // function loadImage(file) {
@@ -76,22 +74,37 @@ function dragOverHandler(ev) { ev.preventDefault(); }
 
 function init() {
 
-    this.fileExplorer = new FileExplorer(function (loaded_file) {
-
-        if (loaded_file.app_model) {
-            app_model = loaded_file.app_model
-            return
+    function saveCurrent() {
+        delete app_model.camera
+        app_model.plot_models.forEach(p => { delete p.bbox })
+        fileExplorer.saveProject(app_model)
+    }
+    
+    document.addEventListener('keydown', e => {
+        if (e.keyCode === 83 && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
+            e.preventDefault();
+            saveCurrent()
         }
 
-        if (!loaded_file.paths) {
-            console.log("bad file!", loaded_file)
-            return
+        if (e.keyCode === 83) {
+            saveCurrent()
+        }
+    });
+
+    fileExplorer = new FileExplorer(function (loaded_file) {
+
+        if (loaded_file.plot_models) {
+            app_model = loaded_file
+            app_model.camera = viewer.camera
+            app_model.dom_element = viewer.renderer.domElement
+            controls.initFromModel(app_model);
         }
 
-        app_model.plot_models = []
-        loaded_file.paths.forEach((path, i) => {
-            createPlot(path)
-        })
+        console.log("bad file!", loaded_file)
+        return
+
+    }, () => {
+        saveCurrent()
     })
 
     viewer.setupScene(app_model)
@@ -102,48 +115,35 @@ function init() {
     }
 
     customGui.init(driver)
-    customGui.update(driver.queue, driver.plotter);
 
     controls = new CanvasControls(app_model);
 
-
     render_loop = function () {
+
         viewer.render()
         requestAnimationFrame(render_loop)
         controls.update()
-
         viewer.updateFromModel(app_model)
-    }
+        customGui.update(this.driver.queue, this.driver.plotter);
 
+    }
 
     render_loop()
 
+
+
+
     setTimeout(() => {
-
-
-
-
         customGui.loadSettings()
 
-
         var textPath = pathUtils.text(new Date().toLocaleString())
-        textPath.flat(2)
         createPlot(textPath, { x: 10, y: 10, scale: 0.006 })
-        createPlot(pathUtils.star(), { x: 50, y: 60, scale: 2 })
-        // textPath.flat(2)
-        // var textPath = pathUtils.transform(textPath, 0.01, 50, 10)
-        // createPlot(textPath)
 
-        var squares = []
+        var testPath = pathUtils.upDownTest()
+        createPlot(testPath, { x: 40, y: 40, scale: 1 })
 
-        for (var x = 0; x < 3; x++) {
-            for (var y = 0; y < 3; y++) {
-                squares.push(pathUtils.rectPath(50 + x * 30, 50 + y * 30, 25, 25))
-            }
-        }
-
-        // console.log(textPath)
-        // console.log(squares)
+        // createPlot(pathUtils.wolfram(30), { x: 0, y: 0, scale: 0.8})
+        // createPlot(pathUtils.lorenz(37000), { x: 50, y: 60, scale: 2 })
 
         driver.consumeQueue()
         driver.readStatus()
@@ -151,14 +151,13 @@ function init() {
         // image = imageUtils.createImage()
         // createPlot(imageUtils.dither(image.data, image.width, image.height))
 
-
         // paths = viewer.createPlotList()
         // console.log(paths)
         // paths1 = optomizer.optomizeKD(paths)
         // // paths1 = optomizer.optomizeGrid(paths)
 
         // viewer.drawPlotterMovements(paths1)
-
+    
     }, "100")
 
 

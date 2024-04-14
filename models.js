@@ -8,17 +8,16 @@ uuidv4 = function() {
 
 
 class AppModel {
-    dom_element = undefined
+
+    created_time= undefined
+    modified_time = undefined
+    project_name = undefined
+
     camera_position = {x:100, y:100}
-    zoom = 100
-    aspect = 1
+    zoom = 300
     plot_models = []
-
-    getPlotById(id) {
-        return this.plot_models.find((p) => p.id == id);
-    }
 }
-
+ 
 
 class PlotModel {
 
@@ -29,6 +28,5 @@ class PlotModel {
         this.id = uuidv4()
         this.bbox = new THREE.Box3()
         this.state = "none"
-        return this
     }
 }

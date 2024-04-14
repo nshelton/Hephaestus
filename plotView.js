@@ -59,11 +59,11 @@ class PlotViewer {
         container_outline.position.copy(bbox.getCenter(new THREE.Vector3()));
         container.add(container_outline);
 
-
         var dotgeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
         var originDot = new THREE.Mesh(dotgeometry, this.greenMaterial);
         container.add(originDot);
         container.uiOutline = container_outline
+
         this.id_to_container[plot_model.id] = container
     }
 
@@ -76,13 +76,12 @@ class PlotViewer {
         delete this.id_to_container[id]
     }
 
-
     updateFromModel(app_model) {
 
         this.camera.left = - app_model.zoom / 2
         this.camera.right = app_model.zoom / 2
-        this.camera.top = - app_model.zoom / 2 * app_model.aspect
-        this.camera.bottom = app_model.zoom / 2 * app_model.aspect
+        this.camera.top = - app_model.zoom / 2 * this.aspect
+        this.camera.bottom = app_model.zoom / 2 * this.aspect
         this.camera.position.set(app_model.camera_position[0], app_model.camera_position[1], 2)
         this.camera.updateProjectionMatrix()
 
@@ -97,6 +96,11 @@ class PlotViewer {
             }
 
             const container = this.id_to_container[plot_model.id]
+            
+            if (!plot_model.bbox) {
+                plot_model.bbox = new THREE.Box3()
+            }
+
             plot_model.bbox.setFromObject(container);
             container.position.set(plot_model.position.x, plot_model.position.y, 0)
             container.scale.set(plot_model.scale, plot_model.scale, plot_model.scale)
@@ -115,6 +119,8 @@ class PlotViewer {
         // remove stale ids
         current_ids.forEach(guid => { this.removeViewWithId(guid) })
 
+        var box = this.renderer.domElement.getBoundingClientRect()
+        this.aspect = box.height / box.width
     }
 
     toggleColors() {
@@ -198,19 +204,17 @@ class PlotViewer {
 
     setupScene(app_model) {
 
-        app_model.dom_element = viewer.renderer.domElement
-
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById("plotViewContainer").appendChild(this.renderer.domElement);
 
         this.camera.lookAt(new THREE.Vector3());
 
-        const geometry = new THREE.PlaneGeometry(230, 420, 230 / 10, 420 / 10);
+        const geometry = new THREE.PlaneGeometry(420, 230, 420 / 10, 230 / 10);
         const plane = new THREE.Mesh(geometry, this.backgroundMaterial);
-        plane.position.set(230 / 2, 420 / 2, -0.001)
+        plane.position.set(420 / 2, 230 / 2, -0.001)
         this.scene.add(plane);
 
-        // todo wtf are these numberas and why are they not a3width/height
+        // todo wtf are these numbers and why are they not a3width/height
         const points2 = [];
         points2.push(new THREE.Vector3(280, 0, 0));
         points2.push(new THREE.Vector3(280, 190, 0));
@@ -227,7 +231,6 @@ class PlotViewer {
         this.scene.add(originDot);
 
         this.updateFromModel(app_model)
-
     }
 
     render() {

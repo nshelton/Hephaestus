@@ -1,25 +1,25 @@
 
 class CanvasControls {
     MODE = {
-        NONE:0,
-        HOVER_CANVAS:1,
-        HOVER_OBJECT_SCALE:2,
-        HOVER_OBJECT_MOVE:3,
-        MOVE_CANVAS:4,
-        MOVE_OBJECT:5,
-        SCALE_OBJECT:6,
+        NONE: 0,
+        HOVER_CANVAS: 1,
+        HOVER_OBJECT_SCALE: 2,
+        HOVER_OBJECT_MOVE: 3,
+        MOVE_CANVAS: 4,
+        MOVE_OBJECT: 5,
+        SCALE_OBJECT: 6,
+    }
+
+    initFromModel(appmodel) {
+        this.appmodel = appmodel
+        this.domElement = appmodel.dom_element
     }
 
     constructor(appmodel) {
-
+        this.initFromModel(appmodel)
         this.screen = { left: 0, top: 0, width: 0, height: 0 };
-        this.appmodel = appmodel
 
-        this.domElement = appmodel.dom_element
-        var box = this.domElement.getBoundingClientRect()
 
-        this.aspect = box.height / box.width
-        this.zoom = 300
 
         this.mouseOnScreen = new THREE.Vector2();
         this.raycasterMouse = new THREE.Vector2();
@@ -44,38 +44,29 @@ class CanvasControls {
         this.panEnd = new THREE.Vector2()
 
         this.updateModel();
-        // methods
+        
         this.handleResize = function () {
-            if (this.domElement === document) {
                 this.screen.left = 0;
                 this.screen.top = 0;
                 this.screen.width = window.innerWidth;
                 this.screen.height = window.innerHeight;
-            } else {
-                var box = this.domElement.getBoundingClientRect();
-                var d = this.domElement.ownerDocument.documentElement;
-                this.screen.left = box.left + window.pageXOffset - d.clientLeft;
-                this.screen.top = box.top + window.pageYOffset - d.clientTop;
-                this.screen.width = box.width;
-                this.screen.height = box.height;
-            }
         };
 
-        this.domElement.addEventListener('contextmenu', function (event) { event.preventDefault(); }, false);
+        var element = document.getElementById("plotViewContainer")
+        element.addEventListener('contextmenu', function (event) { event.preventDefault(); }, false);
 
-        this.domElement.addEventListener('mousedown', this.mousedown.bind(this), false);
-        this.domElement.addEventListener('mousemove', this.mousemove.bind(this), false);
+        element.addEventListener('mousedown', this.mousedown.bind(this), false);
+        element.addEventListener('mousemove', this.mousemove.bind(this), false);
 
-        this.domElement.addEventListener('mousewheel', this.mousewheel.bind(this), false);
-        this.domElement.addEventListener('DOMMouseScroll', this.mousewheel.bind(this), false); // firefox
+        element.addEventListener('mousewheel', this.mousewheel.bind(this), false);
+        element.addEventListener('DOMMouseScroll', this.mousewheel.bind(this), false); // firefox
 
         this.handleResize();
         this.update();
     }
 
     updateModel() {
-        this.appmodel.zoom = this.zoom
-        this.appmodel.aspect = this.aspect
+
         this.appmodel.camera_position = [this.canvasPosition.x, this.canvasPosition.y]
     }
 
@@ -86,8 +77,8 @@ class CanvasControls {
 
         if (mouseChange.lengthSq()) {
 
-            this.canvasPosition.x -= mouseChange.x * this.zoom
-            this.canvasPosition.y -= mouseChange.y * this.zoom
+            this.canvasPosition.x -= mouseChange.x * this.appmodel.zoom
+            this.canvasPosition.y -= mouseChange.y * this.appmodel.zoom
 
             this.updateModel()
         }
@@ -134,7 +125,7 @@ class CanvasControls {
         event.preventDefault();
         event.stopPropagation();
 
-        const plot_model = this.appmodel.getPlotById(this.hover_id)
+        const plot_model = this.getPlotById(this.hover_id)
 
         if (plot_model) {
             if (this.mode == this.MODE.HOVER_OBJECT_MOVE) {
@@ -145,7 +136,7 @@ class CanvasControls {
                 this.mode = this.MODE.SCALE_OBJECT;
                 this.initialScale = plot_model.scale;
 
-                const plotPos = new THREE.Vector3(plot_model.position.x,  plot_model.position.y, 0)
+                const plotPos = new THREE.Vector3(plot_model.position.x, plot_model.position.y, 0)
 
                 this.initialDistance = this.intersection.distanceTo(plotPos);
             }
@@ -161,6 +152,10 @@ class CanvasControls {
 
     isInBox(p, bbox) {
         return p.x > bbox.min.x && p.x < bbox.max.x && p.y > bbox.min.y && p.y < bbox.max.y
+    }
+
+    getPlotById(id) {
+        return this.appmodel.plot_models.find((p) => p.id == id);
     }
 
     mousemove(event) {
@@ -183,18 +178,18 @@ class CanvasControls {
 
         } else if (this.mode == this.MODE.MOVE_OBJECT) {
 
-            const plot_model = this.appmodel.getPlotById(this.hover_id)
+            const plot_model = this.getPlotById(this.hover_id)
 
             this.intersection.sub(this.offset)
             plot_model.position.x = this.intersection.x
             plot_model.position.y = this.intersection.y
-            
+
         } else if (this.mode == this.MODE.SCALE_OBJECT) {
-            const plot_model = this.appmodel.getPlotById(this.hover_id)
-            const plotPos = new THREE.Vector3(plot_model.position.x,  plot_model.position.y, 0)
+            const plot_model = this.getPlotById(this.hover_id)
+            const plotPos = new THREE.Vector3(plot_model.position.x, plot_model.position.y, 0)
             const currentDistance = this.intersection.distanceTo(plotPos)
             const scaleFactor = currentDistance / this.initialDistance;
-    
+
             plot_model.scale = this.initialScale * scaleFactor;
 
         } else {
@@ -202,42 +197,32 @@ class CanvasControls {
 
             this.hover_id = ""
             this.appmodel.plot_models.forEach(plot_model => {
-    
+
                 if (!plot_model.bbox) return
-    
+
                 if (this.isInBox(this.intersection, plot_model.bbox)) {
                     this.hover_id = plot_model.id
 
                     const center = plot_model.bbox.getCenter(new THREE.Vector3());
                     const distToCenter = center.distanceTo(this.intersection);
-                    var bbox_dim =  plot_model.bbox.getSize(new THREE.Vector3());
+                    var bbox_dim = plot_model.bbox.getSize(new THREE.Vector3());
                     const largest_edge = Math.max(bbox_dim.x, bbox_dim.y) / 3;
 
                     if (distToCenter <= largest_edge) {
-                        this.domElement.style.cursor = 'move'; 
+                        document.activeElement.style.cursor = 'move';
                         this.mode = this.MODE.HOVER_OBJECT_MOVE;
                         plot_model.state = "hover_move"
-        
                     } else {
                         this.mode = this.MODE.HOVER_OBJECT_SCALE;
-                        this.domElement.style.cursor = 'n-resize';
+                        document.activeElement.style.cursor = 'n-resize';
                         plot_model.state = "hover_scale"
                     }
-                    
-    
                 } else {
                     plot_model.state = "none"
-                    this.domElement.style.cursor = 'default';
-    
+                    document.activeElement.cursor = 'default';
                 }
-    
             })
-
-
         }
-
-
-
     }
 
     mouseup(event) {
@@ -266,12 +251,11 @@ class CanvasControls {
         } else if (event.detail) { // Firefox
 
             delta = - event.detail / 3;
-
         }
 
-        this.zoom *= (1 - 0.05 * delta)
-        this.zoom = Math.min(this.zoom, 1000)
-        this.zoom = Math.max(this.zoom, 50)
+        this.appmodel.zoom *= (1 - 0.05 * delta)
+        this.appmodel.zoom = Math.min(this.appmodel.zoom, 1000)
+        this.appmodel.zoom = Math.max(this.appmodel.zoom, 50)
         this.updateModel()
 
     }

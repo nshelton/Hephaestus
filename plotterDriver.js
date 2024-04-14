@@ -7,43 +7,74 @@ class PlotterDriver {
         this.paused = false
         this.plotter = new Axidraw()
         this.optomizer = new Optomizer()
+        this.upPosition = 0
+        this.downPosition = 0
+        this.upDownDurationMs = 100
+        // this.UP_DOWN_DELAY_SCALE =  0.24
+        this.UP_DOWN_DELAY_SCALE =  0.1
+
+        if (window.localStorage.getItem("plotter_upPosition") != null) {
+            this.setPenUpValue(Number(window.localStorage.getItem("plotter_upPosition")))
+        }
+        if (window.localStorage.getItem("plotter_downPosition") != null) {
+            this.setPenDownValue(Number(window.localStorage.getItem("plotter_downPosition")))
+        }
+        if (window.localStorage.getItem("plotter_speed") != null) {
+            this.setSpeedValue(Number(window.localStorage.getItem("plotter_speed")))
+        }
     }
 
-    disengage () {
-        this.plotter.penUp();
+    disengage() {
+        this.plotter.penUp(1000);
         this.plotter.close();
-    } 
-    
-    penUp() { this.plotter.penUp() }
-    penDown() { this.plotter.penDown() }
+    }
+
+    penUp() { this.plotter.penUp(this.upDownDurationMs) }
+
+    penDown() {
+        console.log(this.upDownDurationMs)
+         this.plotter.penDown(this.upDownDurationMs) }
 
     saveSettings(key, value) {
         window.localStorage.setItem("plotter_" + key, value)
     }
+
     setPenUpValue(val) {
-        if (this.plotter.connected)
+        if (this.plotter.connected) {
             this.plotter.setPenUp(Math.round(val));
+        }
         this.saveSettings("upPosition", val)
+        this.upPosition = val
+        console.log(this.upPosition, this.downPosition,)
+        this.upDownDurationMs = (this.upPosition - this.downPosition) * this.UP_DOWN_DELAY_SCALE
     }
+
     setPenDownValue(val) {
-        if (this.plotter.connected)
+        if (this.plotter.connected) {
             this.plotter.setPenDown(Math.round(val));
+        }
         this.saveSettings("downPosition", val)
+        this.downPosition = val
+        this.upDownDurationMs = (this.upPosition - this.downPosition) * this.UP_DOWN_DELAY_SCALE
     }
+
     setSpeedValue(val) {
         console.log("setSpeedValue", val)
         this.plotter.speed = val;
         this.saveSettings("speed", val)
     }
+
     moveTo(p) {
         dx = Math.round(p[0] - plotterPos[0])
         dy = Math.round(p[1] - plotterPos[1])
         this.queue.push(["move", dx, dy])
         plotterPos = p
     }
+
     plot() {
         console.log("plot")
     }
+
     plotPath(paths) {
         console.log(paths)
         paths = this.optomizer.optomizeKD(paths)
@@ -75,29 +106,30 @@ class PlotterDriver {
     }
 
     async consumeQueue() {
-
+        console.log("commandsSent", this.plotter.commandsSent, 
+                    "commandsCompleted", this.plotter.commandsCompleted)
         if (this.paused)
             return;
 
-        if (this.plotter.commandsSent - this.plotter.commandsCompleted >= 100)
+        if (this.plotter.commandsSent < this.plotter.commandsCompleted - 10)
             return;
 
-        for (var i = 0; i < 100; i++) {
+        for (var i = 0; i < 10; i++) {
             if (this.queue.length > 0) {
                 var next = this.queue.shift()
                 if (next) {
-                    customGui.update(this.queue, this.plotter);
                     switch (next[0]) {
                         case "move": await this.plotter.move(next[1], next[2]); break;
-                        case "up": await this.plotter.penUp(); break;
-                        case "down": await this.plotter.penDown(); break;
+                        case "up": await this.plotter.penUp(this.upDownDurationMs); break;
+                        case "down": await this.plotter.penDown(this.upDownDurationMs); break;
                         case "query": await this.plotter.query(); break;
                     }
                 }
             }
         }
 
-        requestAnimationFrame(this.consumeQueue.bind(this))
+        setTimeout(function() { this.consumeQueue() }.bind(this), "100")
+
     }
 
 }
