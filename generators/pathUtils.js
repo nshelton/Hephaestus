@@ -12,14 +12,152 @@ PathUtils = function () {
         return points
     }
 
-    this.upDownTest = function (rule) {
+    this.wgs84ToWebMercator = function (lon, lat) {
+        var x = lon * 20037508.34 / 180;
+        var y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
+        y = y * 20037508.34 / 180;
+        return [x, -y];
+    }
+    
+    this.convertLatLon = function (paths) {
+        // Define the constants for the Albers Equal-Area Conic Projection
+        var lon0 = -96; // Central meridian
+        var lat0 = 37.5; // Latitude of origin
+        var lat1 = 29.5; // First standard parallel
+        var lat2 = 45.5; // Second standard parallel
+
+
+
+        // Function to convert WGS84 coordinates to Albers Equal-Area Conic Projection
+        function wgs84ToAlbers(lon, lat) {
+            // Convert degrees to radians
+            var lonRad = lon * Math.PI / 180;
+            var latRad = lat * Math.PI / 180;
+            var lon0Rad = lon0 * Math.PI / 180;
+            var lat0Rad = lat0 * Math.PI / 180;
+            var lat1Rad = lat1 * Math.PI / 180;
+            var lat2Rad = lat2 * Math.PI / 180;
+
+            // Calculate the projection constants
+            var n = 0.5 * (Math.sin(lat1Rad) + Math.sin(lat2Rad));
+            var C = Math.pow(Math.cos(lat1Rad), 2) + 2 * n * Math.sin(lat1Rad);
+            var rho0 = Math.sqrt(C - 2 * n * Math.sin(lat0Rad)) / n;
+
+            // Calculate the projection variables
+            var theta = n * (lonRad - lon0Rad);
+            var rho = Math.sqrt(C - 2 * n * Math.sin(latRad)) / n;
+
+            // Calculate the projected coordinates
+            var x = rho * Math.sin(theta);
+            var y = rho0 - rho * Math.cos(theta);
+
+            return [x, y];
+        }
+
+        return paths.map(path => path.map(p => this.wgs84ToWebMercator(p[0], p[1])))
+    }
+
+
+    this.getCenter = function (paths) {
+
+        let x_sum = 0, count = 0, y_sum = 0;
+
+        paths.forEach(path => path.forEach(p => {
+            x_sum += p[0]
+            y_sum += p[1]
+            count += 1
+        }))
+
+        return [x_sum / count, y_sum / count]
+    }
+
+    this.getTopLeft = function (paths) {
+
+        let x_min = 0, y_min = 0;
+
+        paths.forEach(path => path.forEach(p => {
+            x_min = Math.min(p[0], x_min)
+            y_min = Math.min(p[1], y_min)
+        }))
+
+        return [x_min, y_min]
+    }
+
+
+
+    this.plotGeoJson = function (geojson) {
+
+        var label_text = []
+        var label_pos = []
+
+        var outline_paths = []
+        var label_paths = []
+
+        geojson.features.forEach((f, idx) => {
+
+            if (f.geometry.type == "Polygon") {
+                outline_paths.push(f.geometry.coordinates[0])
+            }
+
+            else if (f.geometry.type == "MultiPolygon"  ) {
+                f.geometry.coordinates.forEach(c => {
+                    outline_paths.push(c[0])
+                })
+            } else if (f.geometry.type == "MultiLineString") {
+                f.geometry.coordinates.forEach(c => {
+                    outline_paths.push(c)
+                })
+            } else if (f.geometry.type == "LineString") {
+                outline_paths.push(f.geometry.coordinates)
+
+            }
+
+            if (f.properties.name) {
+                feature_path = outline_paths[outline_paths.length - 1]
+                center = this.getCenter([feature_path])
+
+                label_text.push(f.properties.name)
+                label_pos.push(this.wgs84ToWebMercator(center[0], center[1]))
+            }
+        })
+
+        outline_paths = this.convertLatLon(outline_paths)
+        outline_paths = this.transform(outline_paths, 0.001, 0, 0)
+        // outline_paths = this.transform(outline_paths, 0.1, 0, 0)
+        center = this.getTopLeft(outline_paths)
+        outline_paths = this.transform(outline_paths, 1, -center[0], -center[1])
+
+        label_pos = label_pos.map(p => {
+            return [(p[0] * 0.001) - center[0], (p[1] * 0.001) - center[1]]
+        })
+
+        for(var idx = 0; idx < label_pos.length; idx++) {
+            var textPath = pathUtils.text(label_text[idx])
+            console.log(label_pos[idx])
+            text_center = this.getCenter(textPath)
+            textPath = this.transform(textPath, 0.002, 
+                label_pos[idx][0], 
+                label_pos[idx][1])
+                
+            textPath = this.transform(textPath, 1, 
+                    -text_center[0] *  0.002, 
+                    -text_center[1] *  0.002)
+
+            console.log(textPath)
+            textPath.forEach(p => label_paths.push(p))
+        }
+        
+        return [outline_paths, label_paths]
+    }
+
+    this.upDownTest = function () {
         let result = []
 
-        result.push(this.rectPath(-30,-30,10,10))
-        result.push(this.rectPath(20,20,10,10))
+        result.push(this.rectPath(-30, -30, 10, 10))
+        result.push(this.rectPath(20, 20, 10, 10))
 
-        result.push(this.rectPath(20,-30,10,10))
-        result.push(this.rectPath(-30,20,10,10))
+        result.push(this.rectPath(20, -30, 10, 10))
+        result.push(this.rectPath(-30, 20, 10, 10))
 
         nLines = 10
         r = 20
@@ -68,11 +206,10 @@ PathUtils = function () {
             });
         }
         let result = []
-        circles = coordinates.forEach(p =>
-            {
-                // result.push(this.circlePath(p[0], p[1], 0.5, 10)) 
-                result.push(this.rectPath(p[0], p[1], 1, 0.1)) 
-            })
+        circles = coordinates.forEach(p => {
+            // result.push(this.circlePath(p[0], p[1], 0.5, 10)) 
+            result.push(this.rectPath(p[0], p[1], 1, 0.1))
+        })
         return result;
 
 

@@ -131,19 +131,32 @@ function init() {
     render_loop()
 
 
-
-
     setTimeout(() => {
         customGui.loadSettings()
 
-        var textPath = pathUtils.text(new Date().toLocaleString())
-        createPlot(textPath, { x: 10, y: 10, scale: 0.006 })
+        // var textPath = pathUtils.text(new Date().toLocaleString())
+        // var textPath = pathUtils.text("Los Angeles County EPSG:900913")
+        // createPlot(textPath, { x: 10, y:180, scale: 0.006 })
 
-        var testPath = pathUtils.upDownTest()
-        createPlot(testPath, { x: 40, y: 40, scale: 1 })
+        for (tilename in la_county_osm) {
+            // water, roads, boundaries, transit
+            var layers = pathUtils.plotGeoJson(la_county_osm[tilename].roads)
+            console.log(layers[0])
+            var outlines = layers[0]
+    
+            createPlot(outlines, { x: 0, y: 0, scale: 1.25})
 
-        // createPlot(pathUtils.wolfram(30), { x: 0, y: 0, scale: 0.8})
-        // createPlot(pathUtils.lorenz(37000), { x: 50, y: 60, scale: 2 })
+            
+        }
+ 
+
+        var layers = pathUtils.plotGeoJson(la_county)
+        var outlines = layers[0]
+        var labels = layers[1]
+        console.log("testPath", labels)
+
+        createPlot(labels, { x: 0, y: 0, scale: 1.25})
+        createPlot(outlines, { x: 0, y: 0, scale: 1.25})
 
         driver.consumeQueue()
         driver.readStatus()

@@ -10,8 +10,9 @@ class PlotterDriver {
         this.upPosition = 0
         this.downPosition = 0
         this.upDownDurationMs = 100
-        // this.UP_DOWN_DELAY_SCALE =  0.24
-        this.UP_DOWN_DELAY_SCALE =  0.1
+        // doc says 0.25 but idk 
+        // this.UP_DOWN_DELAY_SCALE =  0.025
+        this.UP_DOWN_DELAY_SCALE =  0.06
 
         if (window.localStorage.getItem("plotter_upPosition") != null) {
             this.setPenUpValue(Number(window.localStorage.getItem("plotter_upPosition")))
@@ -111,7 +112,7 @@ class PlotterDriver {
         if (this.paused)
             return;
 
-        if (this.plotter.commandsSent < this.plotter.commandsCompleted - 10)
+        if (this.plotter.commandsSent < this.plotter.commandsCompleted)
             return;
 
         for (var i = 0; i < 10; i++) {
