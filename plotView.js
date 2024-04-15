@@ -149,7 +149,7 @@ class PlotViewer {
     createPlotList() {
 
         function clipBounds(x) {
-            return Math.max(0, x)
+            return Math.max(0,  Math.min(x, 200))
         }
 
         var transformed = []

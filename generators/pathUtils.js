@@ -112,40 +112,32 @@ PathUtils = function () {
 
             }
 
-            if (f.properties.name) {
-                feature_path = outline_paths[outline_paths.length - 1]
-                center = this.getCenter([feature_path])
+            // if (f.properties.name) {
+            //     feature_path = outline_paths[outline_paths.length - 1]
+            //     center = this.getCenter([feature_path])
 
-                label_text.push(f.properties.name)
-                label_pos.push(this.wgs84ToWebMercator(center[0], center[1]))
-            }
+            //     label_text.push(f.properties.name)
+            //     label_pos.push(this.wgs84ToWebMercator(center[0], center[1]))
+            // }
         })
 
         outline_paths = this.convertLatLon(outline_paths)
         outline_paths = this.transform(outline_paths, 0.001, 0, 0)
         // outline_paths = this.transform(outline_paths, 0.1, 0, 0)
-        center = this.getTopLeft(outline_paths)
-        outline_paths = this.transform(outline_paths, 1, -center[0], -center[1])
 
-        label_pos = label_pos.map(p => {
-            return [(p[0] * 0.001) - center[0], (p[1] * 0.001) - center[1]]
-        })
-
-        for(var idx = 0; idx < label_pos.length; idx++) {
-            var textPath = pathUtils.text(label_text[idx])
-            console.log(label_pos[idx])
-            text_center = this.getCenter(textPath)
-            textPath = this.transform(textPath, 0.002, 
-                label_pos[idx][0], 
-                label_pos[idx][1])
+        // for(var idx = 0; idx < label_pos.length; idx++) {
+        //     var textPath = pathUtils.text(label_text[idx])
+        //     text_center = this.getCenter(textPath)
+        //     textPath = this.transform(textPath, 0.002, 
+        //         label_pos[idx][0], 
+        //         label_pos[idx][1])
                 
-            textPath = this.transform(textPath, 1, 
-                    -text_center[0] *  0.002, 
-                    -text_center[1] *  0.002)
+        //     textPath = this.transform(textPath, 1, 
+        //             -text_center[0] *  0.002, 
+        //             -text_center[1] *  0.002)
 
-            console.log(textPath)
-            textPath.forEach(p => label_paths.push(p))
-        }
+        //     textPath.forEach(p => label_paths.push(p))
+        // }
         
         return [outline_paths, label_paths]
     }
