@@ -31,13 +31,23 @@ class PlotViewer {
         this.id_to_container = {}
     }
 
+    clipBounds(x) {
+        return Math.max(0,  Math.min(x, 200))
+    }
+
+    inBounds(x, y) {
+        return x > 0 && x < 180 && y > 0 && y < 250
+    }
+
     createPlotView(plot_model) {
         console.log("CREATED PLOT", plot_model.id)
         var container = new THREE.Object3D()
         container.paths = []
 
         plot_model.paths.forEach(path => {
+            path = path.filter(p => this.inBounds(p[0], p[1]))
             const points = path.map(s => new THREE.Vector3(s[0], s[1], 0))
+             
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, this.yellowMaterial);
 
@@ -148,9 +158,7 @@ class PlotViewer {
 
     createPlotList() {
 
-        function clipBounds(x) {
-            return Math.max(0,  Math.min(x, 200))
-        }
+
 
         var transformed = []
 
@@ -161,9 +169,11 @@ class PlotViewer {
             var coords = []
 
             for (var i = 0; i < posBuffer.count; i++) {
-                const x = clipBounds(posBuffer.array[i * 3 + 0])
-                const y = clipBounds(posBuffer.array[i * 3 + 1])
-                coords.push([x * 100, y * 100])
+                const x = (posBuffer.array[i * 3 + 0])
+                const y = (posBuffer.array[i * 3 + 1])
+                if (this.inBounds(x, y) ) {
+                    coords.push([x * 100, y * 100])
+                }
             }
             transformed.push(coords)
         })

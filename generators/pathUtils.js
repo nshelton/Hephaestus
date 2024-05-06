@@ -18,7 +18,7 @@ PathUtils = function () {
         y = y * 20037508.34 / 180;
         return [x, -y];
     }
-    
+
     this.convertLatLon = function (paths) {
         // Define the constants for the Albers Equal-Area Conic Projection
         var lon0 = -96; // Central meridian
@@ -71,6 +71,8 @@ PathUtils = function () {
         return [x_sum / count, y_sum / count]
     }
 
+
+
     this.getTopLeft = function (paths) {
 
         let x_min = 0, y_min = 0;
@@ -83,6 +85,145 @@ PathUtils = function () {
         return [x_min, y_min]
     }
 
+    this.computeBoundingBoxes = function (labels) {
+        let boundingBoxes = [];
+
+        // Iterate over each array of points
+        for (let label of labels) {
+            let minX = Number(label[0][0][0]);
+            let minY = Number(label[0][0][1]);
+            let maxX = Number(label[0][0][0]);
+            let maxY = Number(label[0][0][1]);
+
+            // Find minimum and maximum coordinates in the array
+            for (let letter of label) {
+                for (let point of letter) {
+
+                    if (typeof point === 'string') {
+                        console.log("string point", point[0], point[1])
+                    }
+
+                    minX = Math.min(minX, point[0]);
+                    minY = Math.min(minY, point[1]);
+                    maxX = Math.max(maxX, point[0]);
+                    maxY = Math.max(maxY, point[1]);
+                }
+            }
+            // console.log(minX, minY, maxX, maxY)
+
+            // Add the bounding box to the result array
+            boundingBoxes.push({
+                minX: minX,
+                minY: minY,
+                maxX: maxX,
+                maxY: maxY
+            });
+        }
+
+        return boundingBoxes;
+    }
+
+    this.repositionNonOverlappingBoundingBoxes = function (pointsArray) {
+
+        // Compute bounding boxes
+        let boundingBoxes = this.computeBoundingBoxes(pointsArray);
+
+        // Calculate maximum width and height of bounding boxes
+        let maxWidth = 0;
+        let maxHeight = 0;
+        for (let box of boundingBoxes) {
+            let width = box.maxX - box.minX;
+            let height = box.maxY - box.minY;
+            maxWidth = Math.max(maxWidth, width);
+            maxHeight = Math.max(maxHeight, height);
+        }
+
+        // Reposition points to avoid overlapping bounding boxes
+        let xOffset = 0;
+        let yOffset = 0;
+        for (let i = 0; i < pointsArray.length; i++) {
+            let points = pointsArray[i];
+            let box = boundingBoxes[i];
+
+            // Adjust x offset if the next bounding box overlaps with the previous one
+            if (i > 0) {
+                let prevBox = boundingBoxes[i - 1];
+                let overlapX = (prevBox.maxX + xOffset) - (box.minX);
+                if (overlapX > 0) {
+                    xOffset += overlapX + 1;
+                }
+            }
+
+            // Adjust y offset if the next bounding box overlaps with the previous one
+            if (i > 0 && xOffset === 0) {
+                let prevBox = boundingBoxes[i - 1];
+                let overlapY = (prevBox.maxY + yOffset) - (box.minY);
+                if (overlapY > 0) {
+                    yOffset += overlapY + 1;
+                }
+            }
+
+            // Reposition points
+            for (let j = 0; j < points.length; j++) {
+                points[j][0] += xOffset;
+                points[j][1] += yOffset;
+            }
+        }
+        console.log(pointsArray)
+        return pointsArray;
+    }
+
+    this.relaxBoundingBoxes = function (pointsArray, iterations = 1, k = 0.1) {
+
+        // Compute force between two bounding boxes
+
+        function computeForce(box1, box2) {
+            let midX1 = (box1.minX + box1.maxX) / 2;
+            let midY1 = (box1.minY + box1.maxY) / 2;
+            let midX2 = (box2.minX + box2.maxX) / 2;
+            let midY2 = (box2.minY + box2.maxY) / 2;
+            // console.log("bbox comp", midX1, midY1, midX2, midY2)
+
+            let dx = midX2 - midX1;
+            let dy = midY2 - midY1;
+
+            return [dx, dy];
+        }
+
+        // Initialize forces for each array of points
+        let forces = new Array(pointsArray.length).fill([0, 0]);
+
+        console.log("pointsArray in", JSON.parse(JSON.stringify(pointsArray)));
+
+        // Perform relaxation iterations
+        for (let iter = 0; iter < iterations; iter++) {
+
+            // Compute bounding boxes
+
+            let boundingBoxes = this.computeBoundingBoxes(pointsArray);
+            // console.log("boundingBoxes", iter,  JSON.parse(JSON.stringify(boundingBoxes)))
+            // Update forces between arrays
+
+            for (let i = 0; i < pointsArray.length; i++) {
+                for (let j = 0; j < pointsArray.length; j++) {
+                    if (i == j) continue;
+
+                    let force = computeForce(boundingBoxes[i], boundingBoxes[j]);
+                    forces[i][0] += force[0];
+                    forces[i][1] += force[1];
+                }
+            }
+
+            // move all points (triple nested array) by respective bounding box force
+            pointsArray = pointsArray.map((label, bbox_id) =>  label.map( paths =>  paths.map(point => 
+                 [point[0] + forces[bbox_id][0] * k, point[1] + forces[bbox_id][1] * k]
+             )))
+
+
+        }
+
+        return pointsArray;
+    }
 
 
     this.plotGeoJson = function (geojson) {
@@ -94,12 +235,13 @@ PathUtils = function () {
         var label_paths = []
 
         geojson.features.forEach((f, idx) => {
-
+ 
+            if (idx <80 ||idx >115) return
             if (f.geometry.type == "Polygon") {
                 outline_paths.push(f.geometry.coordinates[0])
             }
 
-            else if (f.geometry.type == "MultiPolygon"  ) {
+            else if (f.geometry.type == "MultiPolygon") {
                 f.geometry.coordinates.forEach(c => {
                     outline_paths.push(c[0])
                 })
@@ -112,33 +254,50 @@ PathUtils = function () {
 
             }
 
-            // if (f.properties.name) {
-            //     feature_path = outline_paths[outline_paths.length - 1]
-            //     center = this.getCenter([feature_path])
+            if (f.properties.name) {
+                feature_path = outline_paths[outline_paths.length - 1]
+                center = this.getCenter([feature_path])
 
-            //     label_text.push(f.properties.name)
-            //     label_pos.push(this.wgs84ToWebMercator(center[0], center[1]))
-            // }
+                label_text.push(f.properties.name)
+                label_pos.push(this.wgs84ToWebMercator(center[0], center[1]))
+            }
         })
 
         outline_paths = this.convertLatLon(outline_paths)
         outline_paths = this.transform(outline_paths, 0.001, 0, 0)
         // outline_paths = this.transform(outline_paths, 0.1, 0, 0)
+        labels = []
 
-        // for(var idx = 0; idx < label_pos.length; idx++) {
-        //     var textPath = pathUtils.text(label_text[idx])
-        //     text_center = this.getCenter(textPath)
-        //     textPath = this.transform(textPath, 0.002, 
-        //         label_pos[idx][0], 
-        //         label_pos[idx][1])
-                
-        //     textPath = this.transform(textPath, 1, 
-        //             -text_center[0] *  0.002, 
-        //             -text_center[1] *  0.002)
 
-        //     textPath.forEach(p => label_paths.push(p))
-        // }
-        
+        for (var idx = 0; idx < label_pos.length; idx++) {
+            var textPath = pathUtils.text(label_text[idx])
+
+            text_center = this.getCenter(textPath)
+            
+            let fonstscale = 2
+
+            textPath = this.transform(textPath, fonstscale,
+                label_pos[idx][0],
+                label_pos[idx][1])
+
+            textPath = this.transform(textPath, 1,
+                -text_center[0] * 2,
+                -text_center[1] * 2)
+
+            // console.log("textsPath before", textPath)
+
+            textPath = this.transform(textPath, 0.001, 1,1)
+            
+            // console.log("textsPath after", textPath)
+
+            labels.push(textPath)
+        }
+
+        // something is wrong here...
+        // labels = this.relaxBoundingBoxes(labels)
+
+        labels.forEach(label => label.forEach(p => label_paths.push(p)))
+
         return [outline_paths, label_paths]
     }
 
@@ -245,7 +404,6 @@ PathUtils = function () {
     this.transform = function (paths, scale, tx, ty) {
         return paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
             .map(path => path.map(p => [p[0] + tx, p[1] + ty]))
-        return paths
     }
 
     this.dragonPath = function () {
@@ -335,7 +493,6 @@ PathUtils = function () {
         return paths
     }
 
-
     this.gridTest = function () {
         let N = 50
         noise.seed(Math.random());
@@ -376,7 +533,6 @@ PathUtils = function () {
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         return (paths)
     }
-
 
     this.flowField = function () {
         points = [
@@ -579,7 +735,6 @@ PathUtils = function () {
         return (paths)
     }
 
-
     this.text = function (theString) {
         paths = []
         offset = 0
@@ -608,7 +763,7 @@ PathUtils = function () {
         paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
         // tx = -2000
         // ty = 5000
-        // paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+        paths = paths.filter(p => p.length > 0)
         return paths
     }
 
@@ -806,7 +961,6 @@ PathUtils = function () {
         h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
         return [(h1 ^ h2 ^ h3 ^ h4) >>> 0, (h2 ^ h1) >>> 0, (h3 ^ h1) >>> 0, (h4 ^ h1) >>> 0];
     }
-
 
     this.mulberry32 = function (a) {
         return function () {

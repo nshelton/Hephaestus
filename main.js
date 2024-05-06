@@ -144,31 +144,33 @@ function init() {
         var outlines = layers[0]
         var labels = layers[1]
 
-        
         center = pathUtils.getTopLeft(outlines)
-        outlines = pathUtils.transform(outlines, 1, -center[0], -center[1])
-        labels = pathUtils.transform(labels, 0.001, -center[0], -center[1])
+ 
+        // center[1] += 40
 
-        console.log("testPath", outlines)
+        outlines = pathUtils.transform(outlines, 1, -center[0], -center[1])
         console.log("testPath", labels)
+        console.log("center", center)
+        labels = pathUtils.transform(labels, 1, -center[0], -center[1])
+        // console.log("testPath", outlines)
+
+        // labels = labels.map(path => path.map(p => [p[1], p[0]]))
+        // outlines = outlines.map(path => path.map(p => [p[1], p[0]]))
 
         createPlot(labels, { x: 0, y: 0, scale: 1.25})
         createPlot(outlines, { x: 0, y: 0, scale: 1.25})
 
-        for (tilename in la_county_osm) {
-            // water, roads, boundaries, transit
-            var layers = pathUtils.plotGeoJson(la_county_osm[tilename].roads)
-            var outlines = layers[0]
-            outlines = pathUtils.transform(outlines, 1, -center[0], -center[1])
-            console.log(tilename, outlines)
+        // for (tilename in la_county_osm) {
+        //     // water, roads, boundaries, transit
+        //     var layers = pathUtils.plotGeoJson(la_county_osm[tilename].roads  )
+        //     var outlines = layers[0]
+        //     outlines = pathUtils.transform(outlines, 1, -center[0], -center[1])
+        //     console.log(tilename, outlines)
     
-            createPlot(outlines, { x: 0, y: 0, scale: 1.25})
+        //     createPlot(outlines, { x: 0, y: 0, scale: 1.25})
 
-            
-        }
+        // }
  
-
-
         driver.consumeQueue()
         driver.readStatus()
 
@@ -193,4 +195,4 @@ function init() {
     //     // console.log(list)
 
     // }, "1000")
-}
+}   
