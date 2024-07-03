@@ -7,16 +7,21 @@ customGui = new PlotterGUI()
 
 app_model = new AppModel()
 
-// imageUtils = new imageUtils()
 pathUtils = new PathUtils()
 
-function createPlot(paths, transform) {
+function createPlot(paths, args) {
     // currentPlotObjects.push(paths)
-    const s = transform.scale || 1
-    const x = transform.x || 0
-    const y = transform.y || 0
+    const s = args.scale || 1
+    const x = args.x || 0
+    const y = args.y || 0
 
     const new_model = new PlotModel(paths, { x: x, y: y }, s)
+
+    if (args.locked) {
+        new_model.locked = args.locked
+    }
+
+
     app_model.plot_models.push(new_model)
     viewer.updateFromModel(app_model)
 }
@@ -79,7 +84,7 @@ function init() {
         app_model.plot_models.forEach(p => { delete p.bbox })
         fileExplorer.saveProject(app_model)
     }
-    
+
     document.addEventListener('keydown', e => {
         if (e.keyCode === 83 && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
             e.preventDefault();
@@ -134,43 +139,12 @@ function init() {
     setTimeout(() => {
         customGui.loadSettings()
 
-        // var textPath = pathUtils.text(new Date().toLocaleString())
+        var textPath = pathUtils.text(new Date().toLocaleString())
         // var textPath = pathUtils.text("Los Angeles County EPSG:900913")
-        // createPlot(textPath, { x: 10, y:180, scale: 0.006 })
+        createPlot(textPath, { x: 10, y:10, scale: 0.006 })
 
 
-
-        var layers = pathUtils.plotGeoJson(la_county)
-        var outlines = layers[0]
-        var labels = layers[1]
-
-        center = pathUtils.getTopLeft(outlines)
- 
-        // center[1] += 40
-
-        outlines = pathUtils.transform(outlines, 1, -center[0], -center[1])
-        console.log("testPath", labels)
-        console.log("center", center)
-        labels = pathUtils.transform(labels, 1, -center[0], -center[1])
-        // console.log("testPath", outlines)
-
-        // labels = labels.map(path => path.map(p => [p[1], p[0]]))
-        // outlines = outlines.map(path => path.map(p => [p[1], p[0]]))
-
-        createPlot(labels, { x: 0, y: 0, scale: 1.25})
-        createPlot(outlines, { x: 0, y: 0, scale: 1.25})
-
-        // for (tilename in la_county_osm) {
-        //     // water, roads, boundaries, transit
-        //     var layers = pathUtils.plotGeoJson(la_county_osm[tilename].roads  )
-        //     var outlines = layers[0]
-        //     outlines = pathUtils.transform(outlines, 1, -center[0], -center[1])
-        //     console.log(tilename, outlines)
-    
-        //     createPlot(outlines, { x: 0, y: 0, scale: 1.25})
-
-        // }
- 
+     
         driver.consumeQueue()
         driver.readStatus()
 
@@ -183,7 +157,7 @@ function init() {
         // // paths1 = optomizer.optomizeGrid(paths)
 
         // viewer.drawPlotterMovements(paths1)
-    
+
     }, "100")
 
 

@@ -26,8 +26,6 @@ PathUtils = function () {
         var lat1 = 29.5; // First standard parallel
         var lat2 = 45.5; // Second standard parallel
 
-
-
         // Function to convert WGS84 coordinates to Albers Equal-Area Conic Projection
         function wgs84ToAlbers(lon, lat) {
             // Convert degrees to radians
@@ -236,7 +234,6 @@ PathUtils = function () {
 
         geojson.features.forEach((f, idx) => {
  
-            if (idx <80 ||idx >115) return
             if (f.geometry.type == "Polygon") {
                 outline_paths.push(f.geometry.coordinates[0])
             }
@@ -272,17 +269,19 @@ PathUtils = function () {
         for (var idx = 0; idx < label_pos.length; idx++) {
             var textPath = pathUtils.text(label_text[idx])
 
+
             text_center = this.getCenter(textPath)
             
-            let fonstscale = 2
+            let fonstscale = 1.5
 
             textPath = this.transform(textPath, fonstscale,
                 label_pos[idx][0],
                 label_pos[idx][1])
 
+    
             textPath = this.transform(textPath, 1,
-                -text_center[0] * 2,
-                -text_center[1] * 2)
+                -text_center[0],
+                -text_center[1] )
 
             // console.log("textsPath before", textPath)
 
@@ -296,9 +295,9 @@ PathUtils = function () {
         // something is wrong here...
         // labels = this.relaxBoundingBoxes(labels)
 
-        labels.forEach(label => label.forEach(p => label_paths.push(p)))
+        // labels.forEach(label => label.forEach(p => label_paths.push(p)))
 
-        return [outline_paths, label_paths]
+        return [outline_paths, labels]
     }
 
     this.upDownTest = function () {

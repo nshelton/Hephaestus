@@ -19,8 +19,6 @@ class CanvasControls {
         this.initFromModel(appmodel)
         this.screen = { left: 0, top: 0, width: 0, height: 0 };
 
-
-
         this.mouseOnScreen = new THREE.Vector2();
         this.raycasterMouse = new THREE.Vector2();
         this.hover_id = ""
@@ -86,7 +84,6 @@ class CanvasControls {
     }
 
     dragObject() {
-
 
         var mouseChange = new THREE.Vector2()
 
@@ -172,6 +169,12 @@ class CanvasControls {
         this.raycaster.setFromCamera(this.raycasterMouse, this.appmodel.camera);
         this.raycaster.ray.intersectPlane(this.backplane, this.intersection)
 
+        if (this.appmodel.reticle_pos == undefined) {
+            this.appmodel.reticle_pos = new THREE.Vector3()
+        }
+
+        this.appmodel.reticle_pos.copy(this.intersection)
+
         if (this.mode == this.MODE.MOVE_CANVAS) {
 
             this.panEnd.copy(this.mouseOnScreen);
@@ -196,9 +199,11 @@ class CanvasControls {
             this.mode = this.MODE.NONE;
 
             this.hover_id = ""
-            this.appmodel.plot_models.forEach(plot_model => {
+            for (var i = 0; i < this.appmodel.plot_models.length; i ++) {
+                let plot_model =  this.appmodel.plot_models[i]
 
-                if (!plot_model.bbox) return
+                if (!plot_model.bbox) continue
+                if (plot_model.locked) return
 
                 if (this.isInBox(this.intersection, plot_model.bbox)) {
                     this.hover_id = plot_model.id
@@ -206,9 +211,9 @@ class CanvasControls {
                     const center = plot_model.bbox.getCenter(new THREE.Vector3());
                     const distToCenter = center.distanceTo(this.intersection);
                     var bbox_dim = plot_model.bbox.getSize(new THREE.Vector3());
-                    const largest_edge = Math.max(bbox_dim.x, bbox_dim.y) / 3;
+                    const smallest_edge = Math.min(bbox_dim.x, bbox_dim.y) / 2;
 
-                    if (distToCenter <= largest_edge) {
+                    if (distToCenter <= smallest_edge) {
                         document.activeElement.style.cursor = 'move';
                         this.mode = this.MODE.HOVER_OBJECT_MOVE;
                         plot_model.state = "hover_move"
@@ -217,11 +222,13 @@ class CanvasControls {
                         document.activeElement.style.cursor = 'n-resize';
                         plot_model.state = "hover_scale"
                     }
+                    break
                 } else {
+                    // TODO: handle this correctly , make sure that all views are reset
                     plot_model.state = "none"
                     document.activeElement.cursor = 'default';
                 }
-            })
+            }
         }
     }
 

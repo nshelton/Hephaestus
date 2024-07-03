@@ -8,7 +8,7 @@ uuidv4 = function() {
 
 
 class AppModel {
-
+    reticle_pos = new THREE.Vector3(0,0,0)
     created_time= undefined
     modified_time = undefined
     project_name = undefined
@@ -28,5 +28,6 @@ class PlotModel {
         this.id = uuidv4()
         this.bbox = new THREE.Box3()
         this.state = "none"
+        this.locked = false
     }
 }

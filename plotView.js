@@ -32,7 +32,7 @@ class PlotViewer {
     }
 
     clipBounds(x) {
-        return Math.max(0,  Math.min(x, 200))
+        return Math.max(0, Math.min(x, 200))
     }
 
     inBounds(x, y) {
@@ -47,7 +47,7 @@ class PlotViewer {
         plot_model.paths.forEach(path => {
             path = path.filter(p => this.inBounds(p[0], p[1]))
             const points = path.map(s => new THREE.Vector3(s[0], s[1], 0))
-             
+
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(geometry, this.yellowMaterial);
 
@@ -63,16 +63,25 @@ class PlotViewer {
         var bbox = new THREE.Box3().setFromObject(container);
 
         var geometry = new THREE.PlaneGeometry(bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y, 1, 1);
-        var container_outline = new THREE.Mesh(geometry, 
+        var container_outline = new THREE.Mesh(geometry,
             new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true }));
 
         container_outline.position.copy(bbox.getCenter(new THREE.Vector3()));
+        container_outline.position.z -= 0.01;
         container.add(container_outline);
-
-        var dotgeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
-        var originDot = new THREE.Mesh(dotgeometry, this.greenMaterial);
-        container.add(originDot);
         container.uiOutline = container_outline
+
+        // var dotgeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
+        // var originDot = new THREE.Mesh(dotgeometry, this.greenMaterial);
+
+        // container.add(originDot);
+
+        // container.bboxHelper = new THREE.BoxHelper(container, 0xff8800);
+        // this.scene.add(container.bboxHelper);
+
+        // let sphereGeo = new THREE.SphereGeometry(1, 1, 10, 10)
+        // this.reticle = new THREE.Mesh(sphereGeo, this.greenMaterial)
+        // this.scene.add(this.reticle)
 
         this.id_to_container[plot_model.id] = container
     }
@@ -87,6 +96,10 @@ class PlotViewer {
     }
 
     updateFromModel(app_model) {
+
+        // if (this.reticle) {
+        //     this.reticle.position.copy(app_model.reticle_pos)
+        // }
 
         this.camera.left = - app_model.zoom / 2
         this.camera.right = app_model.zoom / 2
@@ -106,12 +119,17 @@ class PlotViewer {
             }
 
             const container = this.id_to_container[plot_model.id]
-            
+
             if (!plot_model.bbox) {
                 plot_model.bbox = new THREE.Box3()
             }
 
             plot_model.bbox.setFromObject(container);
+
+            if (container.bboxHelper) {
+                container.bboxHelper.update()
+            }
+
             container.position.set(plot_model.position.x, plot_model.position.y, 0)
             container.scale.set(plot_model.scale, plot_model.scale, plot_model.scale)
 
@@ -119,7 +137,7 @@ class PlotViewer {
                 container.uiOutline.material.color.setHex(0x00ff00);
             } else if (plot_model.state == "hover_scale") {
                 container.uiOutline.material.color.setHex(0x00bbff);
-            }else {
+            } else {
                 container.uiOutline.material.color.setHex(0x888888);
             }
             current_ids.splice(idx, 1)
@@ -171,7 +189,7 @@ class PlotViewer {
             for (var i = 0; i < posBuffer.count; i++) {
                 const x = (posBuffer.array[i * 3 + 0])
                 const y = (posBuffer.array[i * 3 + 1])
-                if (this.inBounds(x, y) ) {
+                if (this.inBounds(x, y)) {
                     coords.push([x * 100, y * 100])
                 }
             }

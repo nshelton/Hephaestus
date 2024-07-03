@@ -133,11 +133,10 @@ class FileExplorer {
     }
 
     constructor(loadedCallback, saveCallback) {
-        this.app_model = app_model
         this.loadedCallback = loadedCallback;
         this.saveCallback = saveCallback;
+
         const explorer_node = document.getElementById("explorer");
-        
         
         var load_button = document.createElement("button")
         load_button.innerText = "Open Folder"
