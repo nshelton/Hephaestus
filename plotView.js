@@ -40,12 +40,12 @@ class PlotViewer {
     }
 
     createPlotView(plot_model) {
-        console.log("CREATED PLOT", plot_model.id)
+        console.log("CREATED PLOT", plot_model.id, plot_model)
         var container = new THREE.Object3D()
         container.paths = []
 
         plot_model.paths.forEach(path => {
-            path = path.filter(p => this.inBounds(p[0], p[1]))
+            //path = path.filter(p => this.inBounds(p[0], p[1]))
             const points = path.map(s => new THREE.Vector3(s[0], s[1], 0))
 
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -61,13 +61,14 @@ class PlotViewer {
         this.scene.add(container)
 
         var bbox = new THREE.Box3().setFromObject(container);
+        console.log(bbox)
 
         var geometry = new THREE.PlaneGeometry(bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y, 1, 1);
         var container_outline = new THREE.Mesh(geometry,
             new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true }));
 
-        container_outline.position.copy(bbox.getCenter(new THREE.Vector3()));
-        container_outline.position.z -= 0.01;
+        // container_outline.position.copy(bbox.getCenter(new THREE.Vector3()));
+        // container_outline.position.z -= 0.01;
         container.add(container_outline);
         container.uiOutline = container_outline
 
@@ -266,8 +267,6 @@ class PlotViewer {
     }
 
     parseSVGNodes(paths, polyline) {
-        console.log(paths)
-        console.log(polyline)
         var segments = []
         polyline.forEach(path => {
             var points = path.attributes.points.value.split(" ")

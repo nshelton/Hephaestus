@@ -17,10 +17,9 @@ function createPlot(paths, args) {
 
     const new_model = new PlotModel(paths, { x: x, y: y }, s)
 
-    if (args.locked) {
-        new_model.locked = args.locked
-    }
-
+    // if (args.locked) {
+    //     new_model.locked = args.locked
+    // }
 
     app_model.plot_models.push(new_model)
     viewer.updateFromModel(app_model)
@@ -103,6 +102,7 @@ function init() {
             app_model.camera = viewer.camera
             app_model.dom_element = viewer.renderer.domElement
             controls.initFromModel(app_model);
+            controls.updateModel();
         }
 
         console.log("bad file!", loaded_file)
@@ -140,11 +140,44 @@ function init() {
         customGui.loadSettings()
 
         var textPath = pathUtils.text(new Date().toLocaleString())
-        // var textPath = pathUtils.text("Los Angeles County EPSG:900913")
-        createPlot(textPath, { x: 10, y:10, scale: 0.006 })
+        console.log(textPath)
+        // // var textPath = pathUtils.text("Los Angeles County EPSG:900913")
+        // createPlot(textPath, { x: 5, y: 5, scale: 0.005 })
+        // let points = []
+        // let skeleton = []
+        // let angle = 0
+        // //  "golden" angle
+        // let paths = []
 
+        // const phi = 2.39996322972865332
+        // let radius = 1;
+        // for (var i = 0; i < 30; i++) {
+        //     let x = Math.cos(angle) * radius;
+        //     let y = Math.sin(angle) * radius;
+        //     angle += phi
+        //     radius += 60
 
-     
+        //     let angle2 = angle * 1000345
+        //     let radius2 = 0
+
+        //     for (var j = 0; j < 30; j++) {
+        //         let x2 = Math.cos(angle2) * radius2;
+        //         let y2 = Math.sin(angle2) * radius2;
+
+        //         paths.push(pathUtils.circlePath(x2 + x, y2 + y, Math.sqrt(radius2) * 2))
+        //         angle2 += phi
+        //         radius2 += 0.3 * Math.sqrt(radius)
+        //         points.push([x2 + x, y2 + y])
+        //         skeleton.push([[x2 + x, y2 + y], [x, y]])
+        //     }
+
+        //     skeleton.push([[0, 0], [x, y]])
+        // }
+        // points = points.map(p => [p[0] * 0.05, p[1] * 0.05])
+        // paths = pathUtils.voronoi(points)
+        // // createPlot(paths, { x: 90, y: 90, scale: 0.8 })
+        // createPlot(skeleton, { x: 90, y: 90, scale: 0.04 })
+
         driver.consumeQueue()
         driver.readStatus()
 

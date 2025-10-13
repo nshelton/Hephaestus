@@ -12,7 +12,7 @@ class PlotterDriver {
         this.upDownDurationMs = 100
         // doc says 0.25 but idk 
         // this.UP_DOWN_DELAY_SCALE =  0.025
-        this.UP_DOWN_DELAY_SCALE =  0.06
+        this.UP_DOWN_DELAY_SCALE = 0.06
 
         if (window.localStorage.getItem("plotter_upPosition") != null) {
             this.setPenUpValue(Number(window.localStorage.getItem("plotter_upPosition")))
@@ -34,7 +34,8 @@ class PlotterDriver {
 
     penDown() {
         console.log(this.upDownDurationMs)
-         this.plotter.penDown(this.upDownDurationMs) }
+        this.plotter.penDown(this.upDownDurationMs)
+    }
 
     saveSettings(key, value) {
         window.localStorage.setItem("plotter_" + key, value)
@@ -66,28 +67,34 @@ class PlotterDriver {
     }
 
     moveTo(p) {
-        dx = Math.round(p[0] - plotterPos[0])
-        dy = Math.round(p[1] - plotterPos[1])
+        var dx = Math.round(p[0] - this.plotterPos[0])
+        var dy = Math.round(p[1] - this.plotterPos[1])
         this.queue.push(["move", dx, dy])
-        plotterPos = p
+        this.plotterPos = p
     }
 
     plot() {
         console.log("plot")
     }
 
-    plotPath(paths) {
+    plotPath(paths, doLift = true) {
         console.log(paths)
         paths = this.optomizer.optomizeKD(paths)
         paths = paths.filter(p => p.length > 0)
         paths.forEach(path => {
 
             this.moveTo(path[0])
-            this.queue.push(["down"])
+            if (doLift) {
+                this.queue.push(["down"])
+            }
+
             for (var i = 1; i < path.length; i++) {
                 this.moveTo(path[i])
             }
-            this.queue.push(["up"])
+
+            if (doLift) {
+                this.queue.push(["up"])
+            }
         })
 
         this.moveTo([0, 0])
@@ -107,29 +114,30 @@ class PlotterDriver {
     }
 
     async consumeQueue() {
-        console.log("commandsSent", this.plotter.commandsSent, 
-                    "commandsCompleted", this.plotter.commandsCompleted)
+        console.log("commandsSent", this.plotter.commandsSent,
+            "commandsCompleted", this.plotter.commandsCompleted)
         if (this.paused)
             return;
 
-        if (this.plotter.commandsSent < this.plotter.commandsCompleted)
-            return;
+        if (this.plotter.commandsSent <= this.plotter.commandsCompleted) {
 
-        for (var i = 0; i < 10; i++) {
-            if (this.queue.length > 0) {
-                var next = this.queue.shift()
-                if (next) {
-                    switch (next[0]) {
-                        case "move": await this.plotter.move(next[1], next[2]); break;
-                        case "up": await this.plotter.penUp(this.upDownDurationMs); break;
-                        case "down": await this.plotter.penDown(this.upDownDurationMs); break;
-                        case "query": await this.plotter.query(); break;
+            for (var i = 0; i < 10; i++) {
+                if (this.queue.length > 0) {
+                    var next = this.queue.shift()
+                    if (next) {
+                        switch (next[0]) {
+                            case "move": await this.plotter.move(next[1], next[2]); break;
+                            case "up": await this.plotter.penUp(this.upDownDurationMs); break;
+                            case "down": await this.plotter.penDown(this.upDownDurationMs); break;
+                            case "query": await this.plotter.query(); break;
+                        }
                     }
                 }
             }
         }
 
-        setTimeout(function() { this.consumeQueue() }.bind(this), "100")
+
+        setTimeout(function () { this.consumeQueue() }.bind(this), 10)
 
     }
 

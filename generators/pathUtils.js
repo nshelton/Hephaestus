@@ -974,7 +974,7 @@ PathUtils = function () {
     this.seed = new Date().toTimeString()
     this.rand = function () { return this.mulberry32(this.cyrb128(this.seed)[0]) };
 
-    this.voronoi = function () {
+    this.voronoi = function (points = []) {
 
         function uniquePoints(value, index, array) { return array.findIndex(v => v.x == value.x && v.y == value.y) === index; }
         function mul(a, b) { return { x: a.x * b, y: a.y * b } }
@@ -1010,23 +1010,25 @@ PathUtils = function () {
             return val
         }
 
-        nPoints = 20
-        points = []
-        for (var i = 0; i < nPoints; i++) {
-            p = [gauss(), gauss()]
-            points.push(p)
-        }
+        // if (points.length == 0 ) {
+        //     nPoints = 20
+        //     for (var i = 0; i < nPoints; i++) {
+        //         p = [gauss() * 50, gauss()*10]
+        //         points.push(p)
+        //     }
+        // }
+      
         paths = []
-        // paths = points.map(p => this.circlePath(p[0], p[1], 0.01, 30))
+        paths = points.map(p => this.circlePath(p[0], p[1], 1, 30))
 
-        bbox = { xl: -1, xr: 1, yt: -1, yb: 1 }
+        bbox = { xl: -100, xr: 100, yt: -100, yb: 100 }
         voronoi = new Voronoi()
         sites = points.map(p => { return { x: p[0], y: p[1] } })
         diagram = voronoi.compute(sites, bbox);
 
-        diagram.edges.forEach(edge => {
-            paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
-        });
+        // diagram.edges.forEach(edge => {
+        //     paths.push([[edge.va.x, edge.va.y], [edge.vb.x, edge.vb.y]])
+        // });
 
         //   diagram.edges.forEach(edge => {
         //     if (edge.lSite != null && edge.rSite != null) {
@@ -1052,6 +1054,7 @@ PathUtils = function () {
         function smooth(path, amount) {
             var start = lerp(path[1], path[path.length - 2], 0.5)
             start = lerp(path[0], start, amount)
+            
             result = [start]
 
             for (var i = 1; i < path.length - 1; i++) {
@@ -1080,11 +1083,11 @@ PathUtils = function () {
         // )
 
 
-        var scale = 80
-        paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
-        tx = 85
-        ty = 110
-        paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
+        // var scale = 80
+        // paths = paths.map(path => path.map(p => [p[0] * scale, p[1] * scale]))
+        // tx = 85
+        // ty = 110
+        // paths = paths.map(path => path.map(p => [p[0] + tx, p[1] + ty]))
 
         console.log(paths)
         return paths

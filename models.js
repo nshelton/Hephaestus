@@ -20,7 +20,7 @@ class AppModel {
  
 
 class PlotModel {
-
+    // todo add color!
     constructor(paths, position, scale) {
         this.position = position
         this.paths = paths
